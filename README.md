@@ -4,6 +4,21 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ---
 
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **AI & Intelligence** | **Gemini 2.0 Flash** (`google-genai`) | Contextual risk scoring (0-100), LTV evaluation & personalized WhatsApp/Email nudge composition. |
+| **Fallback Engine** | **Deterministic Heuristic Engine** | 0-downtime rule-based policy engine for 100% SLA resilience during network or API limits. |
+| **Core Backend** | **Python 3.10+** | Multi-agent orchestration, event routing, and state machine management. |
+| **Data Validation** | **Pydantic v2** | Strict schema validation for webhooks, detection events, and audit logs. |
+| **Frontend UI** | **HTML5 & Vanilla JavaScript (ES6)** | Zero-framework, high-performance real-time interactive telemetry dashboard. |
+| **Styling & Design** | **Tailwind CSS & Google Fonts** | Custom Razorpay Royal Blue design system with **Plus Jakarta Sans** & **Inter** typography. |
+| **Audit Ledger** | **SQLite 3 & JSONL** | Append-only immutable compliance database (`recovery_audit.db` & `recovery_audit.jsonl`). |
+| **Testing Suite** | **Pytest 8+** | Automated unit, integration, and edge-case test suite (`run_tests.py`). |
+
+---
+
 ## Product Screenshots & Live Dashboard Walkthrough
 
 ### 1. Executive Recovery KPIs & Control Toolbar
