@@ -26,29 +26,38 @@ flowchart LR
 
 ### 2. Deep-Dive Technical Architecture
 
-Below is the compact end-to-end component flow across ingestion, detection, agents, actions, and audit logging:
+Below is the detailed end-to-end component flow mapping webhook ingestion, root-cause classification, risk policy scoring, multi-agent orchestration, and audit logging:
 
 ```mermaid
 flowchart LR
-    subgraph L1["1. Event Ingestion"]
-        A1["Payment Failures\nCheckout Drops\nMandate Halts\nOverdue Invoices"]
+    subgraph S1["1. Event Ingestion"]
+        E1["Razorpay Webhooks\n• payment.failed\n• checkout.ondismiss\n• subscription.halted\n• invoice.overdue"]
     end
 
-    subgraph L2["2. Detection & Risk"]
-        B1["Root Cause Categorizer"]
-        B2["Gemini LLM Risk Scorer"]
+    subgraph S2["2. Detection & Risk Engine"]
+        D1["Root Cause Classifier"]
+        D2["Gemini LLM Risk Scorer\n(0-100 Risk & Tiering)"]
+        D3["Deterministic Fallback\n(0-Downtime Engine)"]
+        D1 --> D2 & D3
     end
 
-    subgraph L3["3. Recovery Agents"]
-        C1["Payment Agent\nCheckout Agent\nSubscription Agent\nReceivables Chaser\nHuman Escalation"]
+    subgraph S3["3. Agent Orchestrator"]
+        R1["Multi-Agent Router"]
+        R1 --> A1["Payment Agent"]
+        R1 --> A2["Checkout Agent"]
+        R1 --> A3["Subscription Agent"]
+        R1 --> A4["Receivables Chaser"]
+        R1 --> A5["Human Escalation Desk"]
     end
 
-    subgraph L4["4. Actions & Audit"]
-        D1["Razorpay Links & Retries"]
-        D2["SQLite & JSONL Audit Log"]
+    subgraph S4["4. Actions & Audit"]
+        X1["Razorpay Payment Links"]
+        X2["eNACH / UPI Auto-Retries"]
+        X3["Immutable SQLite Log & JSONL"]
     end
 
-    L1 --> L2 --> L3 --> L4
+    S1 --> S2 --> S3
+    A1 & A2 & A3 & A4 & A5 --> X1 & X2 --> X3
 ```
 
 ---
