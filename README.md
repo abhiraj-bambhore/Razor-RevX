@@ -26,37 +26,29 @@ flowchart LR
 
 ### 2. Deep-Dive Technical Architecture
 
-Below is the structured end-to-end component flow across ingestion, root-cause detection, multi-agent orchestration, and audit logging:
+Below is the compact end-to-end component flow across ingestion, detection, agents, actions, and audit logging:
 
 ```mermaid
-flowchart TD
-    subgraph S1["1. Event Ingestion Layer"]
-        A1["Payment Failures / Cart Drops / Mandate Halts / Overdue Invoices"]
+flowchart LR
+    subgraph L1["1. Event Ingestion"]
+        A1["Payment Failures\nCheckout Drops\nMandate Halts\nOverdue Invoices"]
     end
 
-    subgraph S2["2. Root-Cause Detection & Risk Engine"]
-        B1["Failure Detector & Root Cause Categorization"]
-        B2["Gemini LLM Risk Scorer (with Heuristic Fallback)"]
+    subgraph L2["2. Detection & Risk"]
+        B1["Root Cause Categorizer"]
+        B2["Gemini LLM Risk Scorer"]
     end
 
-    subgraph S3["3. Multi-Agent Orchestration Layer"]
-        C1["Payment Recovery Agent"]
-        C2["Checkout Recovery Agent"]
-        C3["Subscription Recovery Agent"]
-        C4["Receivables Chaser Agent"]
-        C5["Human Escalation Agent"]
+    subgraph L3["3. Recovery Agents"]
+        C1["Payment Agent\nCheckout Agent\nSubscription Agent\nReceivables Chaser\nHuman Escalation"]
     end
 
-    subgraph S4["4. Action Execution & Audit Ledger"]
-        D1["Razorpay Payment Links, WhatsApp Nudges & Mandate Retries"]
-        D2["Immutable SQLite & JSONL Audit Log"]
+    subgraph L4["4. Actions & Audit"]
+        D1["Razorpay Links & Retries"]
+        D2["SQLite & JSONL Audit Log"]
     end
 
-    S1 --> B1
-    B1 --> B2
-    B2 --> S3
-    S3 --> D1
-    D1 --> D2
+    L1 --> L2 --> L3 --> L4
 ```
 
 ---
