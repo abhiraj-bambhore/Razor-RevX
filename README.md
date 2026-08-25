@@ -24,67 +24,39 @@ flowchart LR
 
 ---
 
-### 2. Deep-Dive Detailed Technical Architecture
+### 2. Deep-Dive Technical Architecture
 
-For technical evaluators and engineers, below is the end-to-end component flow across ingestion, root-cause detection, risk scoring, multi-agent orchestration, execution actions, and compliance logging:
+Below is the structured end-to-end component flow across ingestion, root-cause detection, multi-agent orchestration, and audit logging:
 
 ```mermaid
 flowchart TD
-    subgraph INGESTION["1. Webhook & Event Ingestion Layer"]
-        E1["Payment Failures\n(payment.failed)"]
-        E2["Checkout Drops\n(ondismiss)"]
-        E3["Mandate Halts\n(charged_halted)"]
-        E4["Overdue Invoices\n(invoice.overdue)"]
+    subgraph S1["1. Event Ingestion Layer"]
+        A1["Payment Failures / Cart Drops / Mandate Halts / Overdue Invoices"]
     end
 
-    subgraph DETECTION["2. Root-Cause Detection Engine"]
-        D1["Payment Failure Detector"]
-        D2["Checkout Abandonment Detector"]
-        D3["Subscription Mandate Detector"]
-        D4["Receivables Detector"]
+    subgraph S2["2. Root-Cause Detection & Risk Engine"]
+        B1["Failure Detector & Root Cause Categorization"]
+        B2["Gemini LLM Risk Scorer (with Heuristic Fallback)"]
     end
 
-    subgraph RISK["3. AI Risk Scoring & Guardrail Policy Engine"]
-        LLM["Gemini 2.0 Flash Risk Scorer\n(Qualitative Context & LTV Scoring)"]
-        FALLBACK["Deterministic Heuristic Fallback\n(0-Downtime Rule Engine)"]
-        GUARD["Compliance Guardrails\n(Max 3 Attempts / Opt-Out Check)"]
+    subgraph S3["3. Multi-Agent Orchestration Layer"]
+        C1["Payment Recovery Agent"]
+        C2["Checkout Recovery Agent"]
+        C3["Subscription Recovery Agent"]
+        C4["Receivables Chaser Agent"]
+        C5["Human Escalation Agent"]
     end
 
-    subgraph ROUTING["4. Multi-Agent Orchestration Layer"]
-        PA["Payment Recovery Agent"]
-        CA["Checkout Recovery Agent"]
-        SA["Subscription Recovery Agent"]
-        RA["Receivables Chaser Agent"]
-        EA["Human Escalation Agent"]
+    subgraph S4["4. Action Execution & Audit Ledger"]
+        D1["Razorpay Payment Links, WhatsApp Nudges & Mandate Retries"]
+        D2["Immutable SQLite & JSONL Audit Log"]
     end
 
-    subgraph ACTIONS["5. Action Execution Layer"]
-        A1["Razorpay Payment Links\n(WhatsApp / SMS / Email)"]
-        A2["Automated Mandate Retries\n(eNACH / UPI AutoPay)"]
-        A3["Smart Nudges &\nPlan Downgrade Offers"]
-        A4["B2B Dunning &\nPromise-to-Pay Tracker"]
-    end
-
-    subgraph AUDIT["6. Compliance & Immutable Audit Ledger"]
-        SQL[("SQLite Audit Database\n(recovery_audit.db)")]
-        JSONL[("Append-Only JSONL Stream\n(recovery_audit.jsonl)")]
-    end
-
-    E1 --> D1
-    E2 --> D2
-    E3 --> D3
-    E4 --> D4
-
-    D1 & D2 & D3 & D4 --> LLM
-    LLM -. Failure / Timeout .-> FALLBACK
-    LLM & FALLBACK --> GUARD
-    GUARD --> ROUTING
-
-    ROUTING --> PA & CA & SA & RA
-    GUARD -->|Amount >= 50k OR Risk >= 85| EA
-
-    PA & CA & SA & RA & EA --> A1 & A2 & A3 & A4
-    A1 & A2 & A3 & A4 --> SQL & JSONL
+    S1 --> B1
+    B1 --> B2
+    B2 --> S3
+    S3 --> D1
+    D1 --> D2
 ```
 
 ---
