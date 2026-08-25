@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Revenue Recovery Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            royal: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#0A2540',
+              950: '#061729',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #F8FAFC; color: #0F172A; font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-weight: 700; letter-spacing: -0.02em; color: #0F172A; }
+    .card-white { background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); }
+    .modal-overlay { background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-slate-50 text-slate-900">
+
+  <!-- UNIFORM NAV BAR WITH LIVE STREAM FEED CONTROLS -->
+  <header class="bg-royal-900 text-white shadow-md border-b border-blue-900/50 sticky top-0 z-40 px-8 py-3.5">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div>
+        <h1 class="font-extrabold text-xl text-white tracking-tight leading-none">Autonomous Revenue Recovery Platform</h1>
+        <div class="flex items-center space-x-3 mt-1.5">
+          <div class="flex items-center space-x-1.5">
+            <span id="stream-pulse" class="inline-block w-2 h-2 rounded-full bg-slate-400"></span>
+            <p class="text-xs text-blue-200 font-medium" id="stream-status-text">Stream Standby</p>
+          </div>
+          <span class="text-blue-400/60">&bull;</span>
+          <span class="text-xs font-mono font-bold text-royal-100 bg-royal-800 px-2 py-0.5 rounded" id="live-stream-counter">Streamed: 0 events</span>
+        </div>
+      </div>
+
+      <!-- UNIFIED CONTROL BAR WITH SUBTLE DIVIDERS (ROYAL BLUE STYLING) -->
+      <div class="flex flex-wrap items-center bg-royal-950/80 backdrop-blur border border-blue-800/60 rounded-lg px-2 py-1 text-xs text-blue-100 divide-x divide-blue-800/60">
+        
+        <!-- Stream Selector Tab -->
+        <div class="px-2 py-1 flex items-center">
+          <select id="stream-category-select" class="bg-transparent text-white text-xs font-semibold outline-none cursor-pointer pr-1">
+            <option value="all" class="bg-royal-950 text-white">Stream: All Streams & Brands</option>
+            
+            <optgroup label="── Transactional Event Streams ──" class="bg-royal-950 text-blue-300 font-semibold">
+              <option value="payment_failure" class="bg-royal-950 text-white">Payment Failures & Degradation</option>
+              <option value="checkout_abandonment" class="bg-royal-950 text-white">Checkout Cart Abandonment</option>
+              <option value="subscription_failure" class="bg-royal-950 text-white">Subscription Mandate Failures</option>
+              <option value="receivable_overdue" class="bg-royal-950 text-white">B2B Overdue Receivables</option>
+            </optgroup>
+
+            <optgroup label="── Specific Payment Brands ──" class="bg-royal-950 text-blue-300 font-semibold">
+              <option value="payment_failure|Google Pay UPI" class="bg-royal-950 text-white">Google Pay UPI</option>
+              <option value="payment_failure|CRED Pay" class="bg-royal-950 text-white">CRED Pay</option>
+              <option value="payment_failure|PhonePe UPI" class="bg-royal-950 text-white">PhonePe UPI</option>
+              <option value="checkout_abandonment|Razorpay Checkout" class="bg-royal-950 text-white">Razorpay Checkout</option>
+              <option value="payment_failure|Paytm Wallet" class="bg-royal-950 text-white">Paytm Wallet</option>
+              <option value="subscription_failure|HDFC Bank eNACH" class="bg-royal-950 text-white">HDFC Bank eNACH</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Brand Mode Toggle Tab -->
+        <div class="px-3 py-1 flex items-center">
+          <button onclick="toggleBrandingMode()" id="btn-branding-toggle" class="hover:text-white font-semibold transition text-royal-100 flex items-center space-x-1">
+            <span id="branding-toggle-label">Mode: Razorpay Only</span>
+          </button>
+        </div>
+
+        <!-- Live Telemetry Toggle Tab -->
+        <div class="px-3 py-1 flex items-center">
+          <button onclick="toggleLiveFeed()" id="btn-live-toggle" class="hover:text-emerald-400 font-semibold transition flex items-center space-x-1.5 text-emerald-300">
+            <span id="btn-live-toggle-text">▶ Start Live Telemetry</span>
+          </button>
+        </div>
+
+        <!-- Export CSV Tab -->
+        <div class="px-3 py-1 flex items-center">
+          <a href="/api/export-csv" class="hover:text-blue-400 font-semibold transition">
+            Export CSV
+          </a>
+        </div>
+
+        <!-- Reset Audit Tab -->
+        <div class="pl-3 py-1 flex items-center">
+          <button onclick="clearAuditTrail()" class="text-slate-400 hover:text-rose-400 font-medium transition">
+            Reset Audit
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- UNIFORM CORPORATE KPI SUMMARY BAR -->
+  <section class="bg-white border-b border-slate-200 py-6 px-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      
+      <!-- Total at Risk -->
+      <div class="card-white p-5 rounded-lg">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+          Revenue at Risk
+        </div>
+        <div class="text-2xl font-extrabold text-slate-900 tracking-tight transition-all duration-300" id="kpi-at-risk">₹0.00</div>
+        <div class="text-xs text-slate-500 mt-1" id="kpi-count-events">0 events processed</div>
+      </div>
+
+      <!-- Total Recovered -->
+      <div class="card-white p-5 rounded-lg">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+          Revenue Recovered
+        </div>
+        <div class="text-2xl font-extrabold text-royal-700 tracking-tight transition-all duration-300" id="kpi-recovered">₹0.00</div>
+        <div class="text-xs text-slate-600 font-semibold mt-1" id="kpi-count-recovered">0 successful recoveries</div>
+      </div>
+
+      <!-- Recovery Rate -->
+      <div class="card-white p-5 rounded-lg">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+          Recovery Rate
+        </div>
+        <div class="text-2xl font-extrabold text-royal-800 tracking-tight transition-all duration-300" id="kpi-rate">0.0%</div>
+        <div class="text-xs text-slate-500 mt-1">Measured conversion</div>
+      </div>
+
+      <!-- Human Escalations -->
+      <div class="card-white p-5 rounded-lg">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+          Escalations
+        </div>
+        <div class="text-2xl font-extrabold text-slate-900 tracking-tight transition-all duration-300" id="kpi-escalated">0</div>
+        <div class="text-xs text-slate-500 mt-1">Human review queue</div>
+      </div>
+
+      <!-- Stopping Rules Triggered -->
+      <div class="card-white p-5 rounded-lg">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+          Stopping Rules
+        </div>
+        <div class="text-2xl font-extrabold text-slate-900 tracking-tight transition-all duration-300" id="kpi-stopped">0</div>
+        <div class="text-xs text-slate-500 mt-1">Opt-out / Max retries</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-8 py-8 flex-grow w-full space-y-8">
+    
+    <!-- NAVIGATION TABS -->
+    <div class="flex border-b border-slate-200 space-x-8">
+      <button onclick="switchTab('simulator')" id="tab-btn-simulator" class="pb-3 text-sm font-bold border-b-2 border-royal-700 text-royal-700 transition">
+        Single Failure Simulator
+      </button>
+      <button onclick="switchTab('batch')" id="tab-btn-batch" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition">
+        Batch Execution Engine
+      </button>
+      <button onclick="switchTab('audit')" id="tab-btn-audit" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition">
+        Audit Ledger
+      </button>
+    </div>
+
+    <!-- TAB 1: INTERACTIVE SIMULATOR -->
+    <div id="tab-simulator" class="space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- LEFT: STANDALONE SINGLE BRAND CARDS WITH ORIGINAL LOGOS (5 COLS) -->
+        <div class="lg:col-span-5 space-y-6">
+          
+          <div class="card-white p-6 rounded-lg">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+              Trigger Real-Time Gateway Event
+            </h2>
+            
+            <p class="text-xs text-slate-600 mb-4 font-medium">Click any standalone payment brand trigger below to simulate a live real-time failure:</p>
+
+            <div class="grid grid-cols-1 gap-2.5">
+              
+              <!-- 1. Card 1 -->
+              <button onclick="triggerLiveCategory('payment_failure', getActiveGateway('payment_failure', 'Google Pay UPI'))" class="text-left p-3.5 rounded bg-slate-50 hover:bg-royal-50 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-royal-700" id="card1-title">Razorpay Payment Failure</div>
+                  <div class="text-slate-500 text-xs mt-0.5" id="card1-sub">UPI & Card Payment Timeout</div>
+                </div>
+                <div class="bg-white p-1 rounded border border-slate-200 shadow-2xs flex items-center">
+                  <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Gateway Logo" id="card1-img">
+                </div>
+              </button>
+
+              <!-- 2. Card 2 -->
+              <button onclick="triggerLiveCategory('checkout_abandonment', getActiveGateway('checkout_abandonment', 'CRED Pay'))" class="text-left p-3.5 rounded bg-slate-50 hover:bg-royal-50 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-royal-700" id="card2-title">Razorpay Checkout Abandonment</div>
+                  <div class="text-slate-500 text-xs mt-0.5" id="card2-sub">High-intent cart drop at checkout</div>
+                </div>
+                <div class="bg-white p-1 rounded border border-slate-200 shadow-2xs flex items-center">
+                  <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Gateway Logo" id="card2-img">
+                </div>
+              </button>
+
+              <!-- 3. Card 3 -->
+              <button onclick="triggerLiveCategory('subscription_failure', getActiveGateway('subscription_failure', 'PhonePe UPI'))" class="text-left p-3.5 rounded bg-slate-50 hover:bg-royal-50 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-royal-700" id="card3-title">Razorpay Subscription Mandates</div>
+                  <div class="text-slate-500 text-xs mt-0.5" id="card3-sub">Autopay eNACH debit rejection</div>
+                </div>
+                <div class="bg-white p-1 rounded border border-slate-200 shadow-2xs flex items-center">
+                  <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Gateway Logo" id="card3-img">
+                </div>
+              </button>
+
+              <!-- 4. Card 4 -->
+              <button onclick="triggerLiveCategory('receivable_overdue', getActiveGateway('receivable_overdue', 'Razorpay Checkout'))" class="text-left p-3.5 rounded bg-slate-50 hover:bg-royal-50 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-royal-700" id="card4-title">Razorpay B2B Overdue Invoices</div>
+                  <div class="text-slate-500 text-xs mt-0.5" id="card4-sub">Enterprise unpaid invoice chasing</div>
+                </div>
+                <div class="bg-white p-1 rounded border border-slate-200 shadow-2xs flex items-center">
+                  <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Gateway Logo" id="card4-img">
+                </div>
+              </button>
+
+              <!-- 5. Paytm / Card 5 -->
+              <button onclick="triggerLiveCategory('payment_failure', getActiveGateway('payment_failure', 'Paytm Wallet'))" class="text-left p-3.5 rounded bg-slate-50 hover:bg-royal-50 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-royal-700" id="card5-title">Razorpay Wallet & UPI Degradation</div>
+                  <div class="text-slate-500 text-xs mt-0.5" id="card5-sub">Wallet & link debit failure</div>
+                </div>
+                <div class="bg-white p-1 rounded border border-slate-200 shadow-2xs flex items-center">
+                  <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Gateway Logo" id="card5-img">
+                </div>
+              </button>
+
+              <!-- 6. Card 6 -->
+              <button onclick="triggerLiveCategory('payment_failure', getActiveGateway('payment_failure', 'Mastercard Credit Card'))" class="text-left p-3.5 rounded bg-slate-50 hover:bg-royal-50 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-royal-700" id="card6-title">Razorpay 3DS Card Authentication Failure</div>
+                  <div class="text-slate-500 text-xs mt-0.5" id="card6-sub">3D Secure OTP timeout & decline</div>
+                </div>
+                <div class="bg-white p-1 rounded border border-slate-200 shadow-2xs flex items-center">
+                  <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Gateway Logo" id="card6-img">
+                </div>
+              </button>
+
+              <!-- 7. Fraud Security Alert -->
+              <button onclick="triggerLiveCategory('fraud_flagged', 'Security Risk Gate')" class="text-left p-3.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-slate-900 group-hover:text-slate-700">Razorpay Fraud Security Incident</div>
+                  <div class="text-slate-500 text-xs mt-0.5">High-risk suspicious card alert quarantine</div>
+                </div>
+                <span class="bg-slate-200 text-slate-800 px-2.5 py-1 rounded text-[11px] font-mono font-bold">SECURITY</span>
+              </button>
+
+            </div>
+          </div>
+
+          <!-- Custom Event Form -->
+          <form id="event-form" onsubmit="handleRunEvent(event)" class="card-white p-6 rounded-lg space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-3">Custom Parameter Configurator</h2>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Failure Mode</label>
+                <select id="input-mode" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+                  <option value="payment_failure">Payment Failure</option>
+                  <option value="checkout_abandonment">Checkout Abandonment</option>
+                  <option value="subscription_failure">Subscription Failure</option>
+                  <option value="receivable_overdue">B2B Overdue Receivable</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Amount (INR)</label>
+                <input type="number" id="input-amount" value="3499" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Customer Name</label>
+                <input type="text" id="input-name" value="Rahul Sharma" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Customer Tier</label>
+                <select id="input-tier" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+                  <option value="standard">Standard</option>
+                  <option value="premium">Premium</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Failure Reason</label>
+                <select id="input-reason" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+                  <option value="insufficient_funds">Insufficient Funds</option>
+                  <option value="gateway_error">Gateway Error / Timeout</option>
+                  <option value="invalid_otp">Invalid OTP / Auth Failed</option>
+                  <option value="card_declined">Card Declined by Issuer</option>
+                  <option value="expired_mandate">Mandate Expired</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Attempt Number</label>
+                <input type="number" id="input-attempt" value="1" min="1" max="5" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+              </div>
+            </div>
+
+            <!-- Toggles for Stopping Rules -->
+            <div class="pt-3 border-t border-slate-200 space-y-2.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-800 font-semibold">Customer Opted Out</span>
+                <input type="checkbox" id="input-opted-out" class="h-4 w-4 rounded border-slate-300 text-royal-700">
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-800 font-semibold">Flag Suspicious / Fraud</span>
+                <input type="checkbox" id="input-fraud" class="h-4 w-4 rounded border-slate-300 text-slate-700">
+              </div>
+            </div>
+
+            <button type="submit" id="btn-run-event" class="w-full bg-royal-700 hover:bg-royal-800 text-white font-bold py-3 px-5 rounded transition text-xs tracking-wider uppercase mt-4">
+              Execute Recovery Agent
+            </button>
+          </form>
+        </div>
+
+        <!-- RIGHT: LIVE PIPELINE STEP-BY-STEP VISUALIZER (7 COLS) -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="card-white p-6 rounded-lg min-h-[520px]">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
+              <h2 class="font-bold text-sm text-slate-900 uppercase tracking-wider">Agent Execution Pipeline</h2>
+              <span class="text-xs font-mono font-bold text-slate-500" id="trace-event-id">Ready</span>
+            </div>
+
+            <!-- Empty state -->
+            <div id="pipeline-empty" class="flex flex-col items-center justify-center py-24 text-center text-slate-500 space-y-3">
+              <div class="text-slate-400 font-bold text-xs uppercase tracking-wider bg-slate-100 px-4 py-2 rounded">
+                SYSTEM STANDBY
+              </div>
+              <p class="text-xs font-semibold text-slate-600">Click any payment gateway category on the left or <strong>"Start Live Telemetry Feed"</strong> to view agent execution.</p>
+            </div>
+
+            <!-- Pipeline Visualizer Container -->
+            <div id="pipeline-active" class="hidden space-y-4">
+              
+              <!-- STEP 1: DETECTOR -->
+              <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                <div class="flex items-center justify-between text-xs font-bold text-royal-800 mb-2">
+                  <span>STEP 1: ROOT CAUSE DETECTOR</span>
+                  <div class="flex items-center space-x-2" id="step1-logo-container">
+                    <span class="bg-royal-100 text-royal-800 px-2 py-0.5 rounded font-mono text-[11px] font-bold" id="step1-gateway">Razorpay PG</span>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-800 font-medium">
+                  <div>Root Cause: <strong class="text-slate-900 font-bold" id="step1-root">Insufficient Funds</strong></div>
+                  <div>Urgency Level: <strong class="text-slate-900 font-bold" id="step1-urgency">Immediate</strong></div>
+                </div>
+              </div>
+
+              <!-- STEP 2: RISK SCORER / LLM -->
+              <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-900 mb-2">
+                  <span>STEP 2: RISK SCORING & DIAGNOSTICS</span>
+                  <span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-mono text-xs font-bold" id="step2-llm-badge">Diagnostic Engine</span>
+                </div>
+                <div class="flex items-center space-x-4 mb-2">
+                  <div class="text-center px-4 py-2 bg-white border border-slate-200 rounded">
+                    <div class="text-[11px] text-slate-500 font-bold uppercase">Risk Score</div>
+                    <div class="text-xl font-extrabold text-royal-700" id="step2-score">65.0 / 100</div>
+                  </div>
+                  <div class="text-xs text-slate-800 flex-1">
+                    <div class="text-slate-500 text-[11px] font-bold uppercase">Diagnostic Reasoning:</div>
+                    <p class="italic text-slate-900 text-xs mt-0.5 font-medium" id="step2-reasoning">"Customer has insufficient funds; error is non-permanent. Payment link with expiration recommended."</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- STEP 3: SUPERVISOR ROUTER -->
+              <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                <div class="flex items-center justify-between text-xs font-bold text-royal-800 mb-2">
+                  <span>STEP 3: SUPERVISOR ROUTING</span>
+                  <span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-mono text-xs font-bold" id="step3-target-agent">payment_recovery_agent</span>
+                </div>
+                <div class="text-xs text-slate-800 font-medium">
+                  Routed to specialist agent: <strong class="text-slate-900 font-bold" id="step3-agent-name">Payment Recovery Agent</strong>
+                </div>
+              </div>
+
+              <!-- STEP 4: ACTION EXECUTION -->
+              <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-900 mb-2">
+                  <span>STEP 4: ACTION EXECUTION & COMPLIANCE GATE</span>
+                  <span class="px-2 py-0.5 rounded font-mono text-xs text-white font-bold bg-royal-700" id="step4-result-badge">PENDING</span>
+                </div>
+                
+                <div class="space-y-2 text-xs font-medium">
+                  <div>Action Executed: <strong class="text-slate-900 font-bold" id="step4-action">send_recovery_link</strong> &bull; Channel: <strong class="text-royal-700 font-bold" id="step4-channel">whatsapp</strong></div>
+                  
+                  <div class="bg-white p-3 rounded border border-slate-200 font-mono text-xs text-slate-800" id="step4-message">
+                    Hi Rahul, your payment of INR 3,499 could not be processed. Please complete payment using this link: https://rzp.io/i/plink_8f93a12
+                  </div>
+
+                  <div id="step4-stopping-box" class="hidden bg-slate-200 border border-slate-300 p-3 rounded text-slate-900 text-xs font-bold">
+                    <strong>Stopping Rule Triggered:</strong> <span id="step4-stopping-rule">Customer Opted Out</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- STEP 5: INTERACTIVE CUSTOMER PAYMENT CONVERSION -->
+              <div id="step5-conversion-box" class="bg-slate-100 border border-slate-300 rounded p-5 text-center space-y-3">
+                <div class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Customer Recovery Communication Sent
+                </div>
+                <p class="text-xs text-slate-700 font-medium">Simulate customer clicking the recovery link to complete payment:</p>
+                <div class="flex items-center justify-center space-x-3">
+                  <button onclick="openCheckoutModal()" id="btn-open-modal" class="bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold text-xs py-2.5 px-4 rounded transition">
+                    Open Payment Portal
+                  </button>
+                  <button onclick="simulateCustomerPay()" id="btn-simulate-pay" class="bg-royal-700 hover:bg-royal-800 text-white font-bold text-xs py-2.5 px-5 rounded transition">
+                    Direct Conversion
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: BATCH RECOVERY ENGINE -->
+    <div id="tab-batch" class="hidden space-y-6">
+      <div class="card-white p-6 rounded-lg">
+        <h2 class="font-bold text-sm text-slate-900 uppercase tracking-wider mb-2">Batch Execution Engine</h2>
+        <p class="text-xs text-slate-600 font-medium mb-6">Select a particular batch size and category to process failure events across all agents simultaneously.</p>
+        
+        <div class="flex items-center space-x-6">
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-slate-700 mb-2">Batch Size: <span id="batch-size-val" class="text-royal-700 font-bold text-sm">30</span> events</label>
+            <input type="range" id="input-batch-size" min="10" max="100" value="30" oninput="document.getElementById('batch-size-val').innerText = this.value" class="w-full h-2 bg-slate-200 rounded appearance-none cursor-pointer accent-royal-700">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Select Category Batch</label>
+            <select id="batch-mode" class="bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+              <option value="all">All Categories Batch</option>
+              <option value="payment">Payment Failures Batch</option>
+              <option value="checkout">Checkout Abandonment Batch</option>
+              <option value="subscription">Subscription Mandates Batch</option>
+              <option value="receivables">Overdue Receivables Batch</option>
+            </select>
+          </div>
+          <div class="pt-6">
+            <button onclick="runBatchSimulation()" id="btn-run-batch" class="bg-royal-700 hover:bg-royal-800 text-white font-bold text-xs py-3 px-6 rounded transition">
+              Execute Batch
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: IMMUTABLE AUDIT LEDGER -->
+    <div id="tab-audit" class="hidden space-y-6">
+      <div class="card-white p-6 rounded-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="font-bold text-sm text-slate-900 uppercase tracking-wider">Audit Ledger</h2>
+            <p class="text-xs text-slate-500 font-medium">Immutable compliance records with decision reasoning</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <input type="text" id="audit-search" onkeyup="filterAuditLedger()" placeholder="Search Event ID..." class="bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none w-52">
+            <select id="audit-filter-status" onchange="filterAuditLedger()" class="bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
+              <option value="all">All Statuses</option>
+              <option value="success">Success / Recovered</option>
+              <option value="pending">Pending</option>
+              <option value="escalated">Escalated</option>
+              <option value="stopped">Stopped</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-3.5">Timestamp</th>
+                <th class="p-3.5">Event ID</th>
+                <th class="p-3.5">Payment Gateway / Brand</th>
+                <th class="p-3.5">Failure Mode</th>
+                <th class="p-3.5">Agent</th>
+                <th class="p-3.5">Action</th>
+                <th class="p-3.5">Result</th>
+                <th class="p-3.5 text-right">At Risk (₹)</th>
+                <th class="p-3.5 text-right">Recovered (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body" class="divide-y divide-slate-200 text-slate-800 font-medium">
+              <tr><td colspan="9" class="p-6 text-center text-slate-500">Loading audit records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SIMULATED PAYMENT MODAL WITH ORIGINAL BRAND LOGOS -->
+  <div id="checkout-modal-overlay" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden p-4">
+    <div class="bg-white border border-slate-300 rounded-lg max-w-md w-full shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-royal-900 p-4 text-white flex items-center justify-between">
+        <div>
+          <span class="font-bold text-xs uppercase tracking-wider block">Payment Recovery Portal</span>
+          <span class="text-[11px] text-blue-200">Razorpay AI Revenue Recovery Engine</span>
+        </div>
+        <button onclick="closeCheckoutModal()" class="text-slate-300 hover:text-white font-bold text-sm">
+          CLOSE
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div>
+            <div class="text-xs text-slate-500 font-medium">Merchant</div>
+            <div class="font-bold text-sm text-slate-900">Enterprise Merchant</div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-500 font-medium">Amount Due</div>
+            <div class="font-bold text-base text-royal-700" id="modal-amount">₹3,499.00</div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-xs font-medium">
+          <div class="flex justify-between text-slate-600">
+            <span>Customer Name:</span>
+            <strong class="text-slate-900 font-bold" id="modal-name">Rahul Sharma</strong>
+          </div>
+          <div class="flex justify-between text-slate-600">
+            <span>Transaction ID:</span>
+            <strong class="font-mono text-royal-700 font-bold" id="modal-link-id">tx_8f93a12</strong>
+          </div>
+        </div>
+
+        <!-- Original Payment Options -->
+        <div class="pt-2">
+          <label class="block text-xs font-bold text-slate-700 mb-2">Select Recovery Payment Method</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-3 rounded border-2 border-royal-700 bg-white font-bold text-center cursor-pointer flex items-center justify-center space-x-2">
+              <img src="/assets/gpay_user.png" class="h-6 w-auto object-contain" alt="Google Pay">
+            </div>
+            <div class="p-3 rounded border border-slate-200 bg-white font-bold text-center cursor-pointer hover:border-royal-300 flex items-center justify-center space-x-2">
+              <img src="/assets/cred_user.png" class="h-6 w-auto object-contain" alt="CRED">
+            </div>
+            <div class="p-3 rounded border border-slate-200 bg-white font-bold text-center cursor-pointer hover:border-royal-300 flex items-center justify-center space-x-2">
+              <img src="/assets/phonepe_official.svg" class="h-6 w-auto object-contain" alt="PhonePe">
+            </div>
+            <div class="p-3 rounded border border-slate-200 bg-white font-bold text-center cursor-pointer hover:border-royal-300 flex items-center justify-center space-x-2">
+              <img src="/assets/razorpay_official.svg" class="h-6 w-auto object-contain" alt="Razorpay">
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3">
+          <button onclick="executeModalPayment()" id="btn-modal-pay-now" class="w-full bg-royal-700 hover:bg-royal-800 text-white font-bold py-3 px-4 rounded transition text-xs">
+            Complete Recovery Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTrace = null;
+    let allAuditEntries = [];
+    let liveFeedInterval = null;
+    let streamedCount = 0;
+    let currentBrandMode = 'razorpay_only'; // 'razorpay_only' or 'multi_brand'
+
+    // Fetch initial stats & set live auto-polling interval
+    fetchStats();
+    setInterval(fetchStats, 2000); // Live real-time polling every 2 seconds
+
+    function toggleBrandingMode() {
+      const label = document.getElementById('branding-toggle-label');
+      const btn = document.getElementById('btn-branding-toggle');
+      
+      if (currentBrandMode === 'razorpay_only') {
+        currentBrandMode = 'multi_brand';
+        label.innerText = 'Mode: Multi-Brand Ecosystem';
+        btn.className = 'text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 px-3.5 py-2 rounded transition shadow-sm border border-purple-600';
+      } else {
+        currentBrandMode = 'razorpay_only';
+        label.innerText = 'Mode: Razorpay Only';
+        btn.className = 'text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3.5 py-2 rounded transition shadow-sm border border-blue-500';
+      }
+      updateUIBranding();
+    }
+
+    function getActiveGateway(modeKey, defaultGateway) {
+      if (currentBrandMode === 'razorpay_only') {
+        return 'Razorpay PG';
+      }
+      return defaultGateway;
+    }
+
+    function updateUIBranding() {
+      const isRazorpayOnly = currentBrandMode === 'razorpay_only';
+      
+      // Card 1
+      document.getElementById('card1-title').innerText = isRazorpayOnly ? 'Razorpay Payment Failure' : 'Google Pay UPI Failure';
+      document.getElementById('card1-img').src = isRazorpayOnly ? '/assets/razorpay_official.svg' : '/assets/gpay_user.png';
+      
+      // Card 2
+      document.getElementById('card2-title').innerText = isRazorpayOnly ? 'Razorpay Checkout Cart Abandonment' : 'CRED Pay & UPI Failure';
+      document.getElementById('card2-img').src = isRazorpayOnly ? '/assets/razorpay_official.svg' : '/assets/cred_user.png';
+      
+      // Card 3
+      document.getElementById('card3-title').innerText = isRazorpayOnly ? 'Razorpay Subscription Mandate Failure' : 'PhonePe UPI Autopay Failure';
+      document.getElementById('card3-img').src = isRazorpayOnly ? '/assets/razorpay_official.svg' : '/assets/phonepe_official.svg';
+      
+      // Card 4
+      document.getElementById('card4-title').innerText = isRazorpayOnly ? 'Razorpay B2B Overdue Invoices' : 'Razorpay Checkout Abandonment';
+      document.getElementById('card4-img').src = '/assets/razorpay_official.svg';
+      
+      // Card 5
+      document.getElementById('card5-title').innerText = isRazorpayOnly ? 'Razorpay Wallet & UPI Degradation' : 'Paytm Wallet & UPI Failure';
+      document.getElementById('card5-img').src = isRazorpayOnly ? '/assets/razorpay_official.svg' : '/assets/paytm_official.svg';
+      
+      // Card 6
+      document.getElementById('card6-title').innerText = isRazorpayOnly ? 'Razorpay 3DS Card Auth Failure' : 'Mastercard Credit Card Failure';
+      document.getElementById('card6-img').src = isRazorpayOnly ? '/assets/razorpay_official.svg' : '/assets/mastercard_official.svg';
+
+      if (!document.getElementById('tab-audit').classList.contains('hidden')) {
+        fetchAuditLedger();
+      }
+    }
+
+    function getBrandLogoHTML(brandName) {
+      if (currentBrandMode === 'razorpay_only') {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/razorpay_official.svg" class="h-5 w-auto object-contain" alt="Razorpay Logo">
+        </span>`;
+      }
+      const b = (brandName || '').toLowerCase();
+      if (b.includes('cred')) {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/cred_user.png" class="h-5 w-auto object-contain" alt="CRED Logo">
+        </span>`;
+      } else if (b.includes('gpay') || b.includes('google pay')) {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/gpay_user.png" class="h-5 w-auto object-contain" alt="GPay Logo">
+        </span>`;
+      } else if (b.includes('phonepe')) {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/phonepe_official.svg" class="h-5 w-auto object-contain" alt="PhonePe Logo">
+        </span>`;
+      } else if (b.includes('razorpay')) {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/razorpay_official.svg" class="h-5 w-auto object-contain" alt="Razorpay Logo">
+        </span>`;
+      } else if (b.includes('paytm')) {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/paytm_official.svg" class="h-5 w-auto object-contain" alt="Paytm Logo">
+        </span>`;
+      } else {
+        return `<span class="inline-flex items-center space-x-1.5 bg-white border border-slate-200 px-2 py-1 rounded shadow-2xs">
+          <img src="/assets/razorpay_official.svg" class="h-5 w-auto object-contain" alt="Razorpay Logo">
+        </span>`;
+      }
+    }
+
+    function switchTab(tabName) {
+      ['simulator', 'batch', 'audit'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.classList.remove('border-royal-700', 'text-royal-700');
+        btn.classList.add('border-transparent', 'text-slate-500');
+      });
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      activeBtn.classList.remove('border-transparent', 'text-slate-500');
+      activeBtn.classList.add('border-royal-700', 'text-royal-700');
+
+      if (tabName === 'audit') fetchAuditLedger();
+      if (tabName === 'simulator') fetchStats();
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const stats = await res.json();
+        
+        const totals = stats.totals || { entries: 0, at_risk_inr: 0, recovered_inr: 0, successful: 0, escalated: 0, stopping_rules_hit: 0 };
+        document.getElementById('kpi-at-risk').innerText = '₹' + totals.at_risk_inr.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('kpi-recovered').innerText = '₹' + totals.recovered_inr.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('kpi-count-recovered').innerText = `${totals.successful} successful recoveries`;
+        document.getElementById('kpi-count-events').innerText = `${totals.entries} events processed`;
+        
+        const rate = totals.at_risk_inr > 0 ? (totals.recovered_inr / totals.at_risk_inr * 100).toFixed(1) : '0.0';
+        document.getElementById('kpi-rate').innerText = rate + '%';
+        document.getElementById('kpi-escalated').innerText = totals.escalated;
+        document.getElementById('kpi-stopped').innerText = totals.stopping_rules_hit;
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+      }
+    }
+
+    function toggleLiveFeed() {
+      const btn = document.getElementById('btn-live-toggle');
+      const pulse = document.getElementById('stream-pulse');
+      const statusText = document.getElementById('stream-status-text');
+      const textLabel = document.getElementById('btn-live-toggle-text') || btn;
+
+      if (liveFeedInterval) {
+        clearInterval(liveFeedInterval);
+        liveFeedInterval = null;
+        textLabel.innerText = '▶ Start Live Telemetry';
+        btn.className = 'hover:text-emerald-400 font-semibold transition flex items-center space-x-1.5 text-emerald-300';
+        pulse.className = 'inline-block w-2 h-2 rounded-full bg-slate-400';
+        statusText.innerText = 'Stream Standby (Paused)';
+      } else {
+        textLabel.innerText = '⏸ Pause Live Telemetry';
+        btn.className = 'hover:text-amber-300 font-semibold transition flex items-center space-x-1.5 text-amber-400';
+        pulse.className = 'inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        statusText.innerText = 'Stream Active (1 event / 3s)';
+        
+        // Execute an event immediately, then every 3 seconds
+        fireRandomSimulatedEvent();
+        liveFeedInterval = setInterval(fireRandomSimulatedEvent, 3000);
+      }
+    }
+
+    async function triggerLiveCategory(modeKey, gatewayBrand) {
+      const names = ['Rahul Sharma', 'Priya Nair', 'Amit Patel', 'Sneha Reddy', 'TechCorp India', 'Mutti Solutions', 'Vikram Malhotra'];
+      const amounts = [3499, 14999, 49000, 850000, 120000, 8500, 24900];
+
+      const isFraud = modeKey === 'fraud_flagged';
+      const actualMode = isFraud ? 'payment_failure' : modeKey;
+      const randomName = names[Math.floor(Math.random() * names.length)];
+      const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+
+      const payload = {
+        mode: actualMode,
+        amount: randomAmount,
+        customer_name: isFraud ? 'Unknown Customer' : randomName,
+        customer_tier: 'standard',
+        failure_reason: isFraud ? 'invalid_otp' : 'insufficient_funds',
+        attempt_number: 1,
+        customer_opted_out: false,
+        fraud_flagged: isFraud,
+        payment_gateway: gatewayBrand || 'Razorpay PG'
+      };
+
+      try {
+        const res = await fetch('/api/run-event', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const trace = await res.json();
+        currentTrace = trace;
+        renderPipelineTrace(trace);
+        fetchStats();
+
+        streamedCount++;
+        document.getElementById('live-stream-counter').innerText = `Streamed: ${streamedCount} events`;
+      } catch (err) {
+        alert('Execution failed: ' + err);
+      }
+    }
+
+    async function fireRandomSimulatedEvent() {
+      const selectedCategory = document.getElementById('stream-category-select').value;
+      const modes = ['payment_failure', 'checkout_abandonment', 'subscription_failure', 'receivable_overdue'];
+      const gateways = ['Google Pay UPI', 'PhonePe UPI', 'CRED Pay', 'Razorpay Checkout', 'Paytm Wallet', 'HDFC Bank eNACH'];
+      const names = ['Amit Patel', 'Sneha Reddy', 'Vikram Malhotra', 'TechCorp Systems', 'Global Retail Ltd', 'Ananya Gupta', 'Rohan Mehta'];
+      const amounts = [2499, 4999, 14999, 35000, 85000, 120000];
+      const reasons = ['insufficient_funds', 'gateway_error', 'invalid_otp', 'expired_mandate'];
+
+      let mode, gateway;
+
+      if (selectedCategory === 'all') {
+        mode = modes[Math.floor(Math.random() * modes.length)];
+        gateway = gateways[Math.floor(Math.random() * gateways.length)];
+      } else if (selectedCategory.includes('|')) {
+        const parts = selectedCategory.split('|');
+        mode = parts[0];
+        gateway = parts[1];
+      } else {
+        mode = selectedCategory;
+        gateway = gateways[Math.floor(Math.random() * gateways.length)];
+      }
+
+      const randomName = names[Math.floor(Math.random() * names.length)];
+      const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+      const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+
+      const payload = {
+        mode: mode,
+        amount: randomAmount,
+        customer_name: randomName,
+        customer_tier: 'standard',
+        failure_reason: randomReason,
+        attempt_number: 1,
+        customer_opted_out: false,
+        fraud_flagged: false,
+        payment_gateway: gateway
+      };
+
+      try {
+        const res = await fetch('/api/run-event', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const trace = await res.json();
+        currentTrace = trace;
+        renderPipelineTrace(trace);
+        fetchStats();
+
+        streamedCount++;
+        document.getElementById('live-stream-counter').innerText = `Streamed: ${streamedCount} events`;
+
+        if (!document.getElementById('tab-audit').classList.contains('hidden')) {
+          fetchAuditLedger();
+        }
+      } catch (err) {
+        console.error('Simulated event failed:', err);
+      }
+    }
+
+    async function handleRunEvent(e) {
+      e.preventDefault();
+      
+      const payload = {
+        mode: document.getElementById('input-mode').value,
+        amount: parseFloat(document.getElementById('input-amount').value),
+        customer_name: document.getElementById('input-name').value,
+        customer_tier: document.getElementById('input-tier').value,
+        failure_reason: document.getElementById('input-reason').value,
+        attempt_number: parseInt(document.getElementById('input-attempt').value),
+        customer_opted_out: document.getElementById('input-opted-out').checked,
+        fraud_flagged: document.getElementById('input-fraud').checked,
+        payment_gateway: 'Razorpay PG'
+      };
+
+      const btn = document.getElementById('btn-run-event');
+      btn.disabled = true;
+      btn.innerText = 'EXECUTING...';
+
+      try {
+        const res = await fetch('/api/run-event', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const trace = await res.json();
+        currentTrace = trace;
+        renderPipelineTrace(trace);
+        fetchStats();
+      } catch (err) {
+        alert('Execution error: ' + err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'EXECUTE RECOVERY AGENT';
+      }
+    }
+
+    function renderPipelineTrace(t) {
+      document.getElementById('pipeline-empty').classList.add('hidden');
+      document.getElementById('pipeline-active').classList.remove('hidden');
+
+      document.getElementById('trace-event-id').innerText = t.event_id;
+      
+      // Step 1
+      const brandLogo = getBrandLogoHTML(t.payment_gateway || 'Razorpay PG');
+      document.getElementById('step1-logo-container').innerHTML = brandLogo + `<span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-mono text-xs font-bold" id="step1-mode">${t.detection.failure_mode.toUpperCase()}</span>`;
+      document.getElementById('step1-root').innerText = t.detection.root_cause;
+      document.getElementById('step1-urgency').innerText = t.detection.urgency;
+
+      // Step 2
+      document.getElementById('step2-score').innerText = t.risk_assessment.risk_score + ' / 100';
+      document.getElementById('step2-reasoning').innerText = `"${t.risk_assessment.reasoning}"`;
+      document.getElementById('step2-llm-badge').innerText = t.risk_assessment.llm_used ? 'LLM Assessment' : 'Rule Assessment';
+
+      // Step 3
+      document.getElementById('step3-target-agent').innerText = t.routing.target_agent;
+      document.getElementById('step3-agent-name').innerText = t.routing.target_agent.replace('_', ' ').toUpperCase();
+
+      // Step 4
+      document.getElementById('step4-action').innerText = t.execution.action_taken;
+      document.getElementById('step4-channel').innerText = t.execution.channel;
+      document.getElementById('step4-message').innerText = t.execution.agent_reasoning || 'Payload sent';
+      
+      const badge = document.getElementById('step4-result-badge');
+      badge.innerText = t.execution.result.toUpperCase();
+      if (t.execution.result === 'success') {
+        badge.className = 'px-2.5 py-0.5 rounded font-mono text-xs text-white font-bold bg-royal-700';
+      } else if (t.execution.result === 'escalated') {
+        badge.className = 'px-2.5 py-0.5 rounded font-mono text-xs text-white font-bold bg-slate-700';
+      } else if (t.execution.result === 'stopped') {
+        badge.className = 'px-2.5 py-0.5 rounded font-mono text-xs text-white font-bold bg-slate-800';
+      } else {
+        badge.className = 'px-2.5 py-0.5 rounded font-mono text-xs text-white font-bold bg-slate-600';
+      }
+
+      if (t.execution.stopping_rule_triggered) {
+        document.getElementById('step4-stopping-box').classList.remove('hidden');
+        document.getElementById('step4-stopping-rule').innerText = t.execution.stopping_rule_triggered;
+      } else {
+        document.getElementById('step4-stopping-box').classList.add('hidden');
+      }
+
+      // Conversion Step
+      if (t.execution.result === 'pending') {
+        document.getElementById('step5-conversion-box').classList.remove('hidden');
+      } else {
+        document.getElementById('step5-conversion-box').classList.add('hidden');
+      }
+    }
+
+    function openCheckoutModal() {
+      if (!currentTrace) return;
+      document.getElementById('modal-amount').innerText = '₹' + currentTrace.amount_inr.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('modal-name').innerText = currentTrace.customer_name;
+      document.getElementById('modal-link-id').innerText = currentTrace.payment_link_simulated || 'tx_demo';
+      document.getElementById('checkout-modal-overlay').classList.remove('hidden');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal-overlay').classList.add('hidden');
+    }
+
+    async function executeModalPayment() {
+      closeCheckoutModal();
+      await simulateCustomerPay();
+    }
+
+    async function simulateCustomerPay() {
+      if (!currentTrace) return;
+
+      const btn = document.getElementById('btn-simulate-pay');
+      btn.disabled = true;
+      btn.innerText = 'Processing...';
+
+      try {
+        const res = await fetch('/api/convert-link', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ event_id: currentTrace.event_id, amount: currentTrace.amount_inr })
+        });
+        const data = await res.json();
+        
+        currentTrace.execution.result = 'success';
+        currentTrace.execution.amount_recovered_inr = currentTrace.amount_inr;
+        renderPipelineTrace(currentTrace);
+        fetchStats();
+
+        alert('Payment Conversion Success: INR ' + currentTrace.amount_inr.toLocaleString('en-IN') + ' recovered.');
+      } catch (err) {
+        alert('Conversion failed: ' + err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Direct Conversion';
+      }
+    }
+
+    async function runBatchSimulation() {
+      const btn = document.getElementById('btn-run-batch');
+      btn.disabled = true;
+      btn.innerText = 'Running Batch...';
+
+      try {
+        const res = await fetch('/api/run-batch', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            batch_size: parseInt(document.getElementById('input-batch-size').value),
+            mode: document.getElementById('batch-mode').value
+          })
+        });
+        const data = await res.json();
+        fetchStats();
+        alert(`Batch simulation complete: ${data.batch_size} events processed.`);
+      } catch (err) {
+        alert('Batch run failed: ' + err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Execute Batch';
+      }
+    }
+
+    async function fetchAuditLedger() {
+      const tbody = document.getElementById('audit-table-body');
+
+      try {
+        const res = await fetch('/api/audit');
+        const data = await res.json();
+        allAuditEntries = data.entries || [];
+        renderAuditTable(allAuditEntries);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-700">Failed to load audit ledger.</td></tr>`;
+      }
+    }
+
+    function renderAuditTable(entries) {
+      const tbody = document.getElementById('audit-table-body');
+      
+      if (!entries || entries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-500">No audit records found. Click "Execute Recovery Agent" or "Start Live Telemetry Feed".</td></tr>`;
+        return;
+      }
+
+      const gatewaysPool = ['Google Pay UPI', 'PhonePe UPI', 'CRED Pay', 'Razorpay Checkout', 'Paytm Wallet', 'HDFC Bank eNACH'];
+
+      tbody.innerHTML = entries.map((r, idx) => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3.5 font-mono text-xs text-slate-500">${r.timestamp ? r.timestamp.substring(0, 19).replace('T', ' ') : ''}</td>
+          <td class="p-3.5 font-mono text-xs text-royal-700 font-bold">${r.event_id}</td>
+          <td class="p-3.5">${getBrandLogoHTML(r.payment_gateway || gatewaysPool[idx % gatewaysPool.length])}</td>
+          <td class="p-3.5 capitalize text-slate-800 font-medium">${r.failure_mode ? r.failure_mode.replace('_', ' ') : ''}</td>
+          <td class="p-3.5 text-slate-600 font-medium">${r.agent_name}</td>
+          <td class="p-3.5 font-mono text-xs text-slate-800">${r.action_taken}</td>
+          <td class="p-3.5">
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-bold ${
+              r.result === 'success' ? 'bg-royal-100 text-royal-800' : 'bg-slate-200 text-slate-800'
+            }">${r.result ? r.result.toUpperCase() : ''}</span>
+          </td>
+          <td class="p-3.5 text-right font-mono text-slate-800 font-bold">₹${(r.amount_at_risk_inr || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+          <td class="p-3.5 text-right font-mono text-royal-700 font-extrabold">₹${(r.amount_recovered_inr || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+        </tr>
+      `).join('');
+    }
+
+    function filterAuditLedger() {
+      const search = document.getElementById('audit-search').value.toLowerCase();
+      const status = document.getElementById('audit-filter-status').value;
+
+      const filtered = allAuditEntries.filter(r => {
+        const matchesSearch = !search || (r.event_id && r.event_id.toLowerCase().includes(search)) || (r.action_taken && r.action_taken.toLowerCase().includes(search)) || (r.failure_mode && r.failure_mode.toLowerCase().includes(search));
+        const matchesStatus = status === 'all' || r.result === status;
+        return matchesSearch && matchesStatus;
+      });
+
+      renderAuditTable(filtered);
+    }
+
+    async function clearAuditTrail() {
+      if (!confirm('Are you sure you want to reset the audit trail to zero?')) return;
+      await fetch('/api/clear-audit', {method: 'POST'});
+      streamedCount = 0;
+      document.getElementById('live-stream-counter').innerText = 'Streamed: 0 events';
+      fetchStats();
+      fetchAuditLedger();
+      document.getElementById('pipeline-empty').classList.remove('hidden');
+      document.getElementById('pipeline-active').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

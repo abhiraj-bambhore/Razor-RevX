@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 60" width="160" height="60">
+  <rect width="160" height="60" rx="8" fill="#000000"/>
+  <g transform="translate(68, 6) scale(0.22)">
+    <path d="M20 20h60v35L50 85 20 55V20z" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M35 35h30v20L50 70 35 55V35z" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M35 52h15v12" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="80" y="50" font-family="'Open Sans', sans-serif" font-weight="900" font-size="13" fill="#FFFFFF" text-anchor="middle" letter-spacing="3">CRED</text>
+</svg>

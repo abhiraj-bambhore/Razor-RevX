@@ -1,0 +1,79 @@
+# ============================================================
+# Razorpay AI Revenue Recovery — Configuration
+# ============================================================
+
+# --------------- STOPPING RULES (compliance guardrails) -----
+stopping_rules:
+  max_attempts_per_case: 3        # Never contact a customer more than 3 times per event
+  cooldown_hours: 48              # Minimum gap between attempts
+  opt_out_check: true             # Always check opt-out list before acting
+  dnc_enforcement: true           # Do Not Contact list enforcement
+
+# --------------- DUNNING SCHEDULES (hours after event) -------
+dunning_schedule:
+  payment_failure:
+    attempts: [0, 24, 72]         # Immediate, 24h, 72h
+    channels: [recovery_link, sms_nudge, escalate]
+
+  checkout_abandon:
+    attempts: [0.5, 4, 24]        # 30min, 4h, 24h
+    channels: [recovery_link, sms_nudge, drop]  # drop = stop after 3rd
+
+  subscription:
+    attempts: [0, 48, 168]        # Immediate, 2 days, 7 days
+    channels: [mandate_retry, recovery_link, plan_downgrade_offer]
+
+  receivables:
+    low_risk:                     # Invoice 0–30 days overdue
+      attempts: [168, 336, 720]   # 7d, 14d, 30d
+      channels: [email_reminder, phone_followup, final_notice]
+    medium_risk:                  # Invoice 31–60 days overdue
+      attempts: [72, 168, 336]    # 3d, 7d, 14d
+      channels: [email_reminder, phone_followup, legal_flag]
+    high_risk:                    # Invoice 61–90 days overdue
+      attempts: [24, 72, 168]     # 1d, 3d, 7d
+      channels: [phone_followup, legal_flag, escalate_human]
+    write_off_risk:               # Invoice 90+ days overdue
+      attempts: [0]
+      channels: [escalate_human]
+
+# --------------- ESCALATION THRESHOLDS -----------------------
+escalation:
+  amount_threshold_inr: 50000     # Cases above ₹50k go to human review
+  risk_score_threshold: 85        # AI risk score 85+ triggers human review
+  subscription_tier: premium      # Premium subscribers always get human review
+  b2b_segment: enterprise         # Enterprise accounts escalate after 1st reminder
+
+# --------------- RISK SCORING --------------------------------
+risk_scoring:
+  # Weights for composite risk score (0-100)
+  amount_weight: 0.35
+  customer_ltv_weight: 0.25
+  failure_reason_weight: 0.25
+  recency_weight: 0.15
+
+  # Failure reason severity (higher = more recoverable via automation)
+  failure_reason_scores:
+    insufficient_funds: 70        # Likely transient, retry works
+    gateway_error: 85             # Transient, retry immediately
+    invalid_otp: 60               # Customer action needed
+    card_declined: 40             # Bank-level, hard to recover
+    payment_cancelled: 55         # Customer intent unclear
+    network_error: 90             # Always retry immediately
+    timeout: 88                   # Almost always retryable
+    fraud_flagged: 5              # Do NOT retry, escalate
+
+# --------------- RECOVERY LINK CONFIG ------------------------
+recovery_link:
+  expiry_hours: 48                # Recovery links expire in 48h
+  base_url: "https://rzp.io/recovery"  # Simulated
+  include_cart_details: true
+  include_failure_reason_message: true
+
+# --------------- AUDIT CONFIG --------------------------------
+audit:
+  db_path: "audit/recovery_audit.db"
+  jsonl_path: "audit/recovery_audit.jsonl"
+  report_path: "audit/"
+  log_llm_reasoning: true         # Store full AI reasoning in audit
+  immutable: true                 # Never update/delete audit records

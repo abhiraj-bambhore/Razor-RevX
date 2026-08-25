@@ -1,0 +1,65 @@
+{
+  "report_id": "rpt_4e27d5e0a2b9",
+  "generated_at": "2026-08-25T12:55:07.048960",
+  "batch_size": 50,
+  "mode": "all",
+  "total_at_risk_inr": 13005303.42,
+  "total_recovered_inr": 25402.059999999998,
+  "recovery_rate_pct": 0.2,
+  "by_failure_mode": {
+    "checkout_abandonment": {
+      "entries": 19.0,
+      "at_risk_inr": 3379616.25,
+      "recovered_inr": 15705.369999999999,
+      "successful": 2.0,
+      "recovery_rate": 0.5
+    },
+    "payment_failure": {
+      "entries": 12.0,
+      "at_risk_inr": 698669.1599999999,
+      "recovered_inr": 6214.58,
+      "successful": 5.0,
+      "recovery_rate": 0.9
+    },
+    "receivable_overdue": {
+      "entries": 9.0,
+      "at_risk_inr": 8852334.7,
+      "recovered_inr": 0.0,
+      "successful": 0.0,
+      "recovery_rate": 0.0
+    },
+    "subscription_failure": {
+      "entries": 10.0,
+      "at_risk_inr": 74683.31,
+      "recovered_inr": 3482.11,
+      "successful": 2.0,
+      "recovery_rate": 4.7
+    }
+  },
+  "total_attempts": 50,
+  "stopping_rules_triggered": 2,
+  "escalated_to_human": 19,
+  "opted_out": 2,
+  "agent_performance": {
+    "checkout_recovery_agent": {
+      "actions": 19,
+      "recovered_inr": 15705.369999999999,
+      "successful": 2
+    },
+    "payment_recovery_agent": {
+      "actions": 12,
+      "recovered_inr": 6214.58,
+      "successful": 5
+    },
+    "receivables_chaser_agent": {
+      "actions": 9,
+      "recovered_inr": 0.0,
+      "successful": 0
+    },
+    "subscription_recovery_agent": {
+      "actions": 10,
+      "recovered_inr": 3482.11,
+      "successful": 2
+    }
+  }
+}

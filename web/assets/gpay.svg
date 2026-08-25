@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="blueG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4285F4"/>
+      <stop offset="100%" stop-color="#1A73E8"/>
+    </linearGradient>
+    <linearGradient id="greenG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34A853"/>
+      <stop offset="100%" stop-color="#1E8E3E"/>
+    </linearGradient>
+    <linearGradient id="yellowG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBC04"/>
+      <stop offset="100%" stop-color="#F9AB00"/>
+    </linearGradient>
+    <linearGradient id="redG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA4335"/>
+      <stop offset="100%" stop-color="#D93025"/>
+    </linearGradient>
+  </defs>
+  <rect x="80" y="150" width="120" height="230" rx="60" fill="url(#blueG)" transform="rotate(35 140 265)"/>
+  <rect x="180" y="70" width="120" height="230" rx="60" fill="url(#greenG)" transform="rotate(35 240 185)"/>
+  <rect x="230" y="190" width="120" height="210" rx="60" fill="url(#yellowG)" transform="rotate(35 290 295)"/>
+  <rect x="300" y="130" width="120" height="220" rx="60" fill="url(#redG)" transform="rotate(35 360 240)"/>
+</svg>
