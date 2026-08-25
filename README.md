@@ -4,20 +4,19 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ---
 
-## Tech Stack & Enterprise Architecture
+## Tech Stack
 
-| Layer | Technology | Purpose & Security Profile |
+| Layer | Technology | Purpose & Implementation |
 |---|---|---|
 | **AI & Intelligence** | **Gemini 2.0 Flash** (`google-genai`) | Contextual risk scoring (0-100), LTV evaluation & personalized WhatsApp/Email nudge composition. |
 | **Fallback Engine** | **Deterministic Heuristic Engine** | 0-downtime rule-based policy engine for 100% SLA resilience during network or API limits. |
 | **Core AI Service** | **Python 3.10+ & Pydantic v2** | High-performance multi-agent orchestration, event routing, and type-safe schema validation. |
-| **Enterprise Integration** | **Java / Spring Boot Gateway Compatibility** | Designed to interface via REST/gRPC webhooks with enterprise Java PCI-DSS payment gateways. |
 | **Frontend UI** | **HTML5 & Vanilla JavaScript (ES6)** | Zero-framework, high-performance real-time interactive telemetry dashboard. |
 | **Styling & Design** | **Tailwind CSS & Google Fonts** | Custom Razorpay Royal Blue design system with **Plus Jakarta Sans** & **Inter** typography. |
 | **Audit Ledger** | **SQLite 3 & JSONL** | Append-only immutable compliance database (`recovery_audit.db` & `recovery_audit.jsonl`). |
 | **Testing Suite** | **Pytest 8+** | Automated unit, integration, and edge-case test suite (`run_tests.py`). |
 
-> **Enterprise Payment Security Note:** In production banking architectures (like Razorpay), the core payment gateway and card vaulting run on **Java / Spring Boot** for PCI-DSS compliance, strict JVM cryptography, and HSM security. **Razor-RevX** operates as a decoupled AI Intelligence Layer that consumes webhook metadata (`payment.failed`, `amount`, `failure_reason`) without handling sensitive card numbers or raw credentials, guaranteeing 0% security exposure and zero financial hallucination risk.
+> **Production Integration Architecture:** While core banking gateways traditionally run on Java, **Razor-RevX is built in Python 3.10+** — the industry standard for LLM multi-agent systems. It integrates with enterprise payment gateways via standardized REST/gRPC webhooks (`payment.failed`, `checkout.ondismiss`), keeping card vaulting isolated while providing real-time AI recovery orchestration.
 
 ---
 
