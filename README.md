@@ -14,23 +14,15 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 ![Stream & Brand Dropdown Filter](web/assets/docs/stream_selector_dropdown.png)
 *Unified selector toolbar for filtering telemetry events by Transactional Event Streams or Specific Payment Brands (Google Pay, CRED, PhonePe, Paytm, HDFC eNACH).*
 
-### 3. Multi-Brand Ecosystem Mode
-![Multi-Brand Ecosystem Mode](web/assets/docs/multibrand_kpis.jpg)
-*Toggle between Razorpay Only mode and Multi-Brand Ecosystem mode to trigger and audit branded payment channel failures.*
-
-### 4. Multi-Agent Execution Pipeline
+### 3. Multi-Agent Execution Pipeline
 ![Agent Execution Pipeline](web/assets/docs/execution_pipeline.png)
 *Step-by-step diagnostic breakdown showing root cause detection, LLM risk scoring (0-100), supervisor agent routing, and action execution.*
 
-### 5. Razorpay Payment Recovery Portal Modal
+### 4. Razorpay Payment Recovery Portal Modal
 ![Razorpay Payment Portal Modal](web/assets/docs/payment_portal_modal.png)
 *Customer-facing recovery checkout portal supporting instant payment completion across Google Pay, CRED Pay, PhonePe, and Razorpay.*
 
-### 6. Custom Parameter Configurator & Trigger Simulator
-![Custom Parameter Configurator](web/assets/docs/custom_configurator.png)
-*Interactive simulation tool allowing testers to configure custom failure modes, transaction amounts, customer tiers, and fraud flags.*
-
-### 7. Immutable Compliance Audit Ledger
+### 5. Immutable Compliance Audit Ledger
 ![Audit Ledger](web/assets/docs/audit_ledger.png)
 *Complete audit trail logging every decision, agent reasoning, risk score, and payment link generated into an append-only SQLite database.*
 
