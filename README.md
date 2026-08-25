@@ -6,6 +6,8 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ## System Architecture
 
+### 1. High-Level Pipeline Overview
+
 Razor-RevX operates as a simple, high-performance 4-stage pipeline:
 
 ```mermaid
@@ -19,6 +21,71 @@ flowchart LR
 2. **Risk & AI Scorer:** Evaluates transaction risk score (0-100) using LLM reasoning and deterministic guardrails.
 3. **Specialist Agents:** Routes cases to dedicated recovery agents (Payment, Checkout, Subscription, or B2B Receivables).
 4. **Action & Audit:** Executes automated payment link nudges or mandate retries, and logs every action into an append-only audit ledger.
+
+---
+
+### 2. Deep-Dive Detailed Technical Architecture
+
+For technical evaluators and engineers, below is the end-to-end component flow across ingestion, root-cause detection, risk scoring, multi-agent orchestration, execution actions, and compliance logging:
+
+```mermaid
+flowchart TD
+    subgraph INGESTION["1. Webhook & Event Ingestion Layer"]
+        E1["Payment Failures\n(payment.failed)"]
+        E2["Checkout Drops\n(ondismiss)"]
+        E3["Mandate Halts\n(charged_halted)"]
+        E4["Overdue Invoices\n(invoice.overdue)"]
+    end
+
+    subgraph DETECTION["2. Root-Cause Detection Engine"]
+        D1["Payment Failure Detector"]
+        D2["Checkout Abandonment Detector"]
+        D3["Subscription Mandate Detector"]
+        D4["Receivables Detector"]
+    end
+
+    subgraph RISK["3. AI Risk Scoring & Guardrail Policy Engine"]
+        LLM["Gemini 2.0 Flash Risk Scorer\n(Qualitative Context & LTV Scoring)"]
+        FALLBACK["Deterministic Heuristic Fallback\n(0-Downtime Rule Engine)"]
+        GUARD["Compliance Guardrails\n(Max 3 Attempts / Opt-Out Check)"]
+    end
+
+    subgraph ROUTING["4. Multi-Agent Orchestration Layer"]
+        PA["Payment Recovery Agent"]
+        CA["Checkout Recovery Agent"]
+        SA["Subscription Recovery Agent"]
+        RA["Receivables Chaser Agent"]
+        EA["Human Escalation Agent"]
+    end
+
+    subgraph ACTIONS["5. Action Execution Layer"]
+        A1["Razorpay Payment Links\n(WhatsApp / SMS / Email)"]
+        A2["Automated Mandate Retries\n(eNACH / UPI AutoPay)"]
+        A3["Smart Nudges &\nPlan Downgrade Offers"]
+        A4["B2B Dunning &\nPromise-to-Pay Tracker"]
+    end
+
+    subgraph AUDIT["6. Compliance & Immutable Audit Ledger"]
+        SQL[("SQLite Audit Database\n(recovery_audit.db)")]
+        JSONL[("Append-Only JSONL Stream\n(recovery_audit.jsonl)")]
+    end
+
+    E1 --> D1
+    E2 --> D2
+    E3 --> D3
+    E4 --> D4
+
+    D1 & D2 & D3 & D4 --> LLM
+    LLM -. Failure / Timeout .-> FALLBACK
+    LLM & FALLBACK --> GUARD
+    GUARD --> ROUTING
+
+    ROUTING --> PA & CA & SA & RA
+    GUARD -->|Amount >= 50k OR Risk >= 85| EA
+
+    PA & CA & SA & RA & EA --> A1 & A2 & A3 & A4
+    A1 & A2 & A3 & A4 --> SQL & JSONL
+```
 
 ---
 
