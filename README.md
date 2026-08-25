@@ -187,6 +187,22 @@ pytest tests/ -v
 
 ---
 
+## What Broke & How We Solved It
+
+### 1. Upstream LLM Rate Limits & API Quota Exhaustion (HTTP 403)
+* **What Broke:** During continuous real-time event streaming (firing simulated webhook events every 3 seconds), the LLM API hit quota rate limits (`403 PERMISSION_DENIED`), threatening to freeze the recovery pipeline and crash the web UI.
+* **How We Solved It:** We engineered a **Graceful Deterministic Fallback Engine** (`src/utils/llm.py`). When an LLM API call fails or times out, the system instantly degrades to rule-based heuristic risk scoring (`llm_used = False`) and pre-templated recovery messages. The recovery pipeline runs with **100% zero downtime**.
+
+### 2. Bank eNACH Mandate Failures & Infinite Retry Loops
+* **What Broke:** Subscription mandate recoveries entered infinite retry loops when bank servers reported persistent gateway errors, threatening customer harassment and bank penal charges.
+* **How We Solved It:** We implemented **Autonomous Stopping Rules & Multi-Rail Fallbacks** (`src/agents/subscription_recovery.py`). We capped retry attempts at 3 (`max_attempts_reached`), enforced customer opt-out verification, and automatically converted failed bank eNACH debits into plan downgrade offers or one-time UPI Payment Links.
+
+### 3. Duplicate Webhook Events & Race Conditions
+* **What Broke:** High-velocity network retries sent duplicate webhook events for the same transaction ID, leading to duplicate payment links and cluttered audit entries.
+* **How We Solved It:** We built **Idempotency & Attempt Tracking** (`src/audit/audit_trail.py`). The system queries `get_attempts_for_event(event_id)` against an append-only SQLite ledger before taking action, guaranteeing **zero duplicate customer messages and zero double-charging**.
+
+---
+
 ## License
 
 Developed for the Razorpay AI Innovation Challenge. Distributed under the MIT License.
