@@ -28,22 +28,6 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ---
 
-## Tech Stack
-
-| Layer | Technology | Purpose & Implementation |
-|---|---|---|
-| **AI & Intelligence** | **Gemini 2.0 Flash** (`google-genai`) | Contextual risk scoring (0-100), LTV evaluation & personalized WhatsApp/Email nudge composition. |
-| **Fallback Engine** | **Deterministic Heuristic Engine** | 0-downtime rule-based policy engine for 100% SLA resilience during network or API limits. |
-| **Core AI Service** | **Python 3.10+ & Pydantic v2** | High-performance multi-agent orchestration, event routing, and type-safe schema validation. |
-| **Frontend UI** | **HTML5 & Vanilla JavaScript (ES6)** | Zero-framework, high-performance real-time interactive telemetry dashboard. |
-| **Styling & Design** | **Tailwind CSS & Google Fonts** | Custom Razorpay Royal Blue design system with **Plus Jakarta Sans** & **Inter** typography. |
-| **Audit Ledger** | **SQLite 3 & JSONL** | Append-only immutable compliance database (`recovery_audit.db` & `recovery_audit.jsonl`). |
-| **Testing Suite** | **Pytest 8+** | Automated unit, integration, and edge-case test suite (`run_tests.py`). |
-
-> **Production Integration Architecture:** While core banking gateways traditionally run on Java, **Razor-RevX is built in Python 3.10+** — the industry standard for LLM multi-agent systems. It integrates with enterprise payment gateways via standardized REST/gRPC webhooks (`payment.failed`, `checkout.ondismiss`), keeping card vaulting isolated while providing real-time AI recovery orchestration.
-
----
-
 ## System Architecture
 
 ### 1. High-Level Pipeline Overview
@@ -99,6 +83,22 @@ flowchart LR
     S1 --> S2 --> S3
     A1 & A2 & A3 & A4 & A5 --> X1 & X2 --> X3
 ```
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose & Implementation |
+|---|---|---|
+| **AI & Intelligence** | **Gemini 2.0 Flash** (`google-genai`) | Contextual risk scoring (0-100), LTV evaluation & personalized WhatsApp/Email nudge composition. |
+| **Fallback Engine** | **Deterministic Heuristic Engine** | 0-downtime rule-based policy engine for 100% SLA resilience during network or API limits. |
+| **Core AI Service** | **Python 3.10+ & Pydantic v2** | High-performance multi-agent orchestration, event routing, and type-safe schema validation. |
+| **Frontend UI** | **HTML5 & Vanilla JavaScript (ES6)** | Zero-framework, high-performance real-time interactive telemetry dashboard. |
+| **Styling & Design** | **Tailwind CSS & Google Fonts** | Custom Razorpay Royal Blue design system with **Plus Jakarta Sans** & **Inter** typography. |
+| **Audit Ledger** | **SQLite 3 & JSONL** | Append-only immutable compliance database (`recovery_audit.db` & `recovery_audit.jsonl`). |
+| **Testing Suite** | **Pytest 8+** | Automated unit, integration, and edge-case test suite (`run_tests.py`). |
+
+> **Production Integration Architecture:** While core banking gateways traditionally run on Java, **Razor-RevX is built in Python 3.10+** — the industry standard for LLM multi-agent systems. It integrates with enterprise payment gateways via standardized REST/gRPC webhooks (`payment.failed`, `checkout.ondismiss`), keeping card vaulting isolated while providing real-time AI recovery orchestration.
 
 ---
 
