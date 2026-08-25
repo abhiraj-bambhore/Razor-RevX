@@ -4,6 +4,30 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ---
 
+## Product Screenshots & Live Dashboard Walkthrough
+
+### 1. Executive Recovery KPIs & Control Toolbar
+![Executive KPIs](web/assets/docs/dashboard_kpis.png)
+*Real-time monitoring of revenue at risk, total recovered INR, recovery rate percentage, escalations, and active telemetry.*
+
+### 2. Multi-Agent Execution Pipeline
+![Agent Execution Pipeline](web/assets/docs/execution_pipeline.png)
+*Step-by-step diagnostic breakdown showing root cause detection, LLM risk scoring (0-100), supervisor agent routing, and action execution.*
+
+### 3. Razorpay Payment Recovery Portal Modal
+![Razorpay Payment Portal Modal](web/assets/docs/payment_portal_modal.png)
+*Customer-facing recovery checkout portal supporting instant payment completion across Google Pay, CRED Pay, PhonePe, and Razorpay.*
+
+### 4. Custom Parameter Configurator & Trigger Simulator
+![Custom Parameter Configurator](web/assets/docs/custom_configurator.png)
+*Interactive simulation tool allowing testers to configure custom failure modes, transaction amounts, customer tiers, and fraud flags.*
+
+### 5. Immutable Compliance Audit Ledger
+![Audit Ledger](web/assets/docs/audit_ledger.png)
+*Complete audit trail logging every decision, agent reasoning, risk score, and payment link generated into an append-only SQLite database.*
+
+---
+
 ## System Architecture
 
 ### 1. High-Level Pipeline Overview
