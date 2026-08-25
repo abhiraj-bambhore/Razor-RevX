@@ -6,68 +6,23 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ## System Architecture
 
+Razor-RevX operates as a simple, high-performance 4-stage pipeline:
+
 ```mermaid
-flowchart TD
-    subgraph INGESTION["1. Webhook & Event Ingestion"]
-        E1["Payment Failure\n(payment.failed)"]
-        E2["Checkout Abandonment\n(ondismiss)"]
-        E3["Subscription Mandate\n(charged_halted)"]
-        E4["B2B Overdue Invoice\n(overdue_aging)"]
-    end
-
-    subgraph DETECTION["2. Detection & Root-Cause Layer"]
-        D1["Payment Detector\n(insufficient_funds / gateway_error)"]
-        D2["Checkout Detector\n(intent_score / time_decay)"]
-        D3["Subscription Detector\n(mandate_status / churn_risk)"]
-        D4["Receivables Detector\n(aging_bucket / collection_prob)"]
-    end
-
-    subgraph RISK["3. Risk Scoring & Policy Engine"]
-        RS["LLM Risk Scorer (Gemini 2.0 Flash)\n(0-100 Risk Score & Tiering)"]
-        FB["Deterministic Heuristic Fallback\n(Zero-Downtime Guarantee)"]
-    end
-
-    subgraph ORCHESTRATION["4. Multi-Agent Router"]
-        PA["Payment Recovery Agent"]
-        CA["Checkout Recovery Agent"]
-        SA["Subscription Recovery Agent"]
-        RA["Receivables Chaser Agent"]
-        EA["Human Escalation Agent"]
-    end
-
-    subgraph ACTIONS["5. Action Execution Layer"]
-        A1["Razorpay Payment Links\n(WhatsApp / SMS / Email)"]
-        A2["Automated Mandate Retries\n(eNACH / UPI AutoPay)"]
-        A3["Smart Nudges &\nPlan Downgrade Offers"]
-        A4["B2B Dunning & Promise-to-Pay\n(PTP Date Tracker)"]
-    end
-
-    subgraph AUDIT["6. Compliance & Audit Ledger"]
-        DB[("Immutable SQLite Log\n(recovery_audit.db)")]
-        JSONL[("Append-Only JSONL Stream\n(recovery_audit.jsonl)")]
-    end
-
-    E1 --> D1
-    E2 --> D2
-    E3 --> D3
-    E4 --> D4
-
-    D1 & D2 & D3 & D4 --> RS
-    RS -. LLM Timeout / 403 .-> FB
-    RS & FB --> ORCHESTRATION
-
-    PA --> A1
-    CA --> A3
-    SA --> A2 & A3
-    RA --> A4
-    EA -->|Amount >= 50k OR Risk >= 85| HumanDesk["Human Security Desk"]
-
-    A1 & A2 & A3 & A4 & HumanDesk --> DB & JSONL
+flowchart LR
+    A["1. Event Ingestion\n(Webhooks & Signals)"] --> B["2. Risk & AI Scorer\n(Gemini LLM & Rules)"]
+    B --> C["3. Specialist Agents\n(Recovery Workflows)"]
+    C --> D["4. Action & Audit\n(Payment Links & Ledger)"]
 ```
+
+1. **Event Ingestion:** Listens to payment failures, checkout drop-offs, mandate declines, and overdue invoices in real-time.
+2. **Risk & AI Scorer:** Evaluates transaction risk score (0-100) using LLM reasoning and deterministic guardrails.
+3. **Specialist Agents:** Routes cases to dedicated recovery agents (Payment, Checkout, Subscription, or B2B Receivables).
+4. **Action & Audit:** Executes automated payment link nudges or mandate retries, and logs every action into an append-only audit ledger.
 
 ---
 
-## Razor-RevX
+## Razor-RevX Evaluation Framework
 
 ### 1. Problem Taste (Picking What Actually Matters)
 * **The Financial Loss:** In Indian digital payments, 5% to 15% of transactions fail or get abandoned across UPI, Credit Cards, eNACH Mandates, and B2B Invoices. For Razorpay merchants processing billions, lost revenue represents thousands of crores annually.
