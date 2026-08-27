@@ -655,6 +655,15 @@
           </p>
         </div>
 
+        <!-- Inline Playable Audio Player Bar -->
+        <div class="bg-slate-900 border border-emerald-500/20 p-3 rounded-lg space-y-1.5">
+          <div class="text-[11px] font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-between">
+            <span>Playable Voice Call Audio:</span>
+            <span class="text-[10px] text-slate-400 font-mono">MP3 Audio File</span>
+          </div>
+          <audio controls id="voice-modal-audio-player" class="w-full h-9 rounded bg-slate-950 accent-emerald-500"></audio>
+        </div>
+
         <!-- Call Actions -->
         <div class="pt-2 grid grid-cols-2 gap-3">
           <button onclick="speakVoiceScript()" id="btn-speak-voice" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded text-xs transition flex items-center justify-center space-x-2">

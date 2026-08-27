@@ -18,17 +18,17 @@ An enterprise-grade, stateful **hierarchical multi-agent system** natively desig
 
 ### Recorded Hinglish Voice IVR Call Audio Samples
 
-The platform includes pre-recorded Hinglish voice call audio samples (`web/assets/audio/`) for high-conversion Indian customer outreach:
+The platform includes pre-recorded Hinglish voice call audio samples (`web/assets/audio/`) for high-conversion Indian customer outreach. Play them directly below:
 
 * **Payment Failure Voice Call Sample ([hinglish_voice_sample.mp3](web/assets/audio/hinglish_voice_sample.mp3))**:
   > *"Namaste Rahul ji, aapka INR 3,499 ka payment abhi process nahi ho paya. Koi baat nahi — aap is link se payment complete kar sakte hain. Dhanyavaad."*
 
-  <audio controls src="web/assets/audio/hinglish_voice_sample.mp3"></audio>
+  <video src="web/assets/audio/hinglish_voice_sample.mp4" controls width="100%"></video>
 
 * **B2B Overdue Invoice Voice Call Sample ([hinglish_voice_receivables_sample.mp3](web/assets/audio/hinglish_voice_receivables_sample.mp3))**:
   > *"Namaste Mutti Solutions, aapka INR 120,000 ka invoice payment overdue hai. Account team se contact karke aaj hi payment clear karein. Dhanyavaad."*
 
-  <audio controls src="web/assets/audio/hinglish_voice_receivables_sample.mp3"></audio>
+  <video src="web/assets/audio/hinglish_voice_receivables_sample.mp4" controls width="100%"></video>
 
 ---
 
