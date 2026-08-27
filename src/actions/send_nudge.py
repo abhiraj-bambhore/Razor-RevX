@@ -34,6 +34,12 @@ def send_nudge(
 
     Nudges are softer touches — cart reminders, subscription renewal reminders.
     """
+    link_id = f"plink_{uuid.uuid4().hex[:10]}"
+    simulated_link = f"https://rzp.io/i/{link_id}"
+
+    if "{link}" in message:
+        message = message.replace("{link}", simulated_link)
+
     engagement_rate = NUDGE_ENGAGEMENT_RATES.get(channel, 0.10)
     adjusted_rate = engagement_rate * (0.5 ** (attempt_number - 1))
 
@@ -63,5 +69,5 @@ def send_nudge(
         channel=channel,
         result=result,
         amount_recovered_inr=amount_recovered,
-        agent_reasoning=f"Nudge via {channel}. Message: {message[:100]}",
+        agent_reasoning=message if message else f"Nudge via {channel}: {simulated_link}",
     )

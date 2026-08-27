@@ -451,7 +451,7 @@ class APIHandler(SimpleHTTPRequestHandler):
                     "channel": "voice_ivr" if mode == "hinglish_voice" else attempt.channel,
                     "result": attempt.result,
                     "amount_recovered_inr": attempt.amount_recovered_inr,
-                    "agent_reasoning": attempt.agent_reasoning,
+                    "agent_reasoning": (attempt.agent_reasoning or "").replace("{link}", f"https://rzp.io/i/plink_{uuid.uuid4().hex[:10]}"),
                     "stopping_rule_triggered": attempt.stopping_rule_triggered,
                     "compliance_flags": getattr(attempt, "compliance_flags", []),
                     "hinglish_voice_script": llm_compose_recovery_message(
@@ -460,9 +460,9 @@ class APIHandler(SimpleHTTPRequestHandler):
                         amount=amount,
                         failure_reason=body.get("failure_reason", "insufficient_funds"),
                         channel="voice" if mode == "hinglish_voice" else "sms",
-                    ),
+                    ).replace("{link}", f"https://rzp.io/i/plink_{uuid.uuid4().hex[:10]}"),
                 },
-                "payment_link_simulated": f"https://rzp.io/i/plink_{uuid.uuid4().hex[:12]}" if "link" in attempt.action_taken or "nudge" in attempt.action_taken or "email" in attempt.action_taken or "retry" in attempt.action_taken or mode == "hinglish_voice" else None,
+                "payment_link_simulated": f"https://rzp.io/i/plink_{uuid.uuid4().hex[:12]}",
             }
 
             self._send_json(response_payload)

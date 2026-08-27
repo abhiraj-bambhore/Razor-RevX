@@ -39,6 +39,9 @@ def send_recovery_link(
     link_id = f"plink_{uuid.uuid4().hex[:14]}"
     simulated_link = f"https://rzp.io/i/{link_id}"
 
+    if "{link}" in message:
+        message = message.replace("{link}", simulated_link)
+
     conversion_rate = LINK_CONVERSION_RATES.get(channel, 0.15)
     # Decay on repeated attempts
     adjusted_rate = conversion_rate * (0.6 ** (attempt_number - 1))
@@ -68,9 +71,5 @@ def send_recovery_link(
         channel=channel,
         result=result,
         amount_recovered_inr=amount_recovered,
-        agent_reasoning=(
-            f"Recovery link sent via {channel}. Link: {simulated_link}. "
-            f"Conversion rate: {adjusted_rate:.1%}. "
-            f"Message: {message[:80]}..." if message else f"Recovery link sent via {channel}."
-        ),
+        agent_reasoning=message if message else f"Recovery link sent via {channel}: {simulated_link}",
     )
