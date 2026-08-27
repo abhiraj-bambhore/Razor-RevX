@@ -1167,7 +1167,7 @@
       }
     }
 
-    async function fetchAuditLedger() {
+    async function fetchAuditLedger(retries = 3) {
       const tbody = document.getElementById('audit-table-body');
 
       try {
@@ -1176,7 +1176,11 @@
         allAuditEntries = data.entries || [];
         renderAuditTable(allAuditEntries);
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-700">Failed to load audit ledger.</td></tr>`;
+        if (retries > 0) {
+          setTimeout(() => fetchAuditLedger(retries - 1), 500);
+        } else {
+          tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-500 font-medium">No audit records found. Click <button onclick="fetchAuditLedger(3)" class="text-royal-700 font-bold underline">Retry Loading</button> or "Execute Recovery Agent".</td></tr>`;
+        }
       }
     }
 
