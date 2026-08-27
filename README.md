@@ -26,7 +26,7 @@ The platform includes pre-recorded Hinglish voice call audio samples for high-co
 <video src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_sample.mp4" controls="controls" width="100%"></video>
 
 #### 2. B2B Overdue Invoice Voice Call Sample
-> *"Namaste Mutti Solutions, aapka INR 120,000 ka invoice payment overdue hai. Account team se contact karke aaj hi payment clear karein. Dhanyavaad."*
+> *"Namaste Murti Solutions, aapka INR 120,000 ka invoice payment overdue hai. Account team se contact karke aaj hi payment clear karein. Dhanyavaad."*
 
 <video src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_receivables_sample.mp4" controls="controls" width="100%"></video>
 
