@@ -42,15 +42,23 @@ The platform includes pre-recorded Hinglish voice call audio samples (`web/asset
 ![Stream & Brand Dropdown Filter](web/assets/docs/stream_selector_dropdown.png)
 *Unified selector toolbar for filtering telemetry events by Transactional Event Streams or Specific Payment Brands (Google Pay, CRED, PhonePe, Paytm, HDFC eNACH).*
 
-### 3. Multi-Agent Execution Pipeline
+### 3. Hinglish Voice IVR Call Execution Pipeline & Live Script
+![Hinglish Voice IVR Call Execution Pipeline](web/assets/docs/hinglish_voice_pipeline.png)
+*Step-by-step execution pipeline showing dynamic Hinglish voice call script generation with resolved Razorpay recovery payment link URLs.*
+
+### 4. Interactive Hinglish Voice IVR Call Simulator Modal
+![Interactive Hinglish Voice IVR Call Simulator Modal](web/assets/docs/hinglish_voice_ivr_modal.png)
+*Live interactive IVR Voice Call screen with audio wave animation, Hinglish transcript, text-to-speech audio playback, and Press 1 instant payment trigger.*
+
+### 5. Multi-Agent Execution Pipeline
 ![Agent Execution Pipeline](web/assets/docs/execution_pipeline.png)
 *Step-by-step diagnostic breakdown showing root cause detection, LLM/ML risk scoring (0-100), supervisor agent routing, and action execution.*
 
-### 4. Razorpay Payment Recovery Portal Modal
+### 6. Razorpay Payment Recovery Portal Modal
 ![Razorpay Payment Portal Modal](web/assets/docs/payment_portal_modal.png)
 *Customer-facing recovery checkout portal supporting instant payment completion across Google Pay, CRED Pay, PhonePe, and Razorpay.*
 
-### 5. Immutable Compliance Audit Ledger
+### 7. Immutable Compliance Audit Ledger
 ![Audit Ledger](web/assets/docs/audit_ledger.png)
 *Complete audit trail logging every decision, agent reasoning, risk score, model used, and payment link generated into an append-only SQLite database.*
 
