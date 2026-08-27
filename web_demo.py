@@ -26,10 +26,12 @@ load_dotenv()
 # Add project root to sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.agents.orchestrator import build_recovery_graph, load_config, RecoveryState
+from src.agents.orchestrator import build_recovery_graph, load_config, MultiAgentState
 from src.audit.audit_trail import AuditTrail
+from src.utils.llm import llm_compose_recovery_message
 from src.data.schemas import (
     CheckoutAbandonedEvent,
+    ComplianceVerdict,
     CustomerSegment,
     ErrorReason,
     ErrorSource,
@@ -41,6 +43,7 @@ from src.data.schemas import (
     RecoveryAttempt,
     RiskAssessment,
     SubscriptionFailureEvent,
+    SupervisorDecision,
 )
 from src.data.simulator import generate_batch
 
@@ -191,7 +194,7 @@ class APIHandler(SimpleHTTPRequestHandler):
         results = []
 
         for event in events:
-            initial_state: RecoveryState = {
+            initial_state: MultiAgentState = {
                 "event": event,
                 "detection": {},
                 "risk_assessment": RiskAssessment(),
@@ -199,6 +202,11 @@ class APIHandler(SimpleHTTPRequestHandler):
                 "failure_mode": "",
                 "config": config_data,
                 "audit": audit_trail,
+                "supervisor_decision": SupervisorDecision(),
+                "compliance_verdict": ComplianceVerdict(),
+                "agent_messages": [],
+                "reflection_count": 0,
+                "max_reflections": 2,
             }
             final_state = recovery_graph.invoke(initial_state)
             attempt = final_state.get("attempt", RecoveryAttempt())
@@ -208,6 +216,7 @@ class APIHandler(SimpleHTTPRequestHandler):
                 "result": attempt.result,
                 "action": attempt.action_taken,
                 "recovered_inr": attempt.amount_recovered_inr,
+                "agents_involved": len(final_state.get("agent_messages", [])),
             })
 
         stats = audit_trail.get_summary_stats()
@@ -335,12 +344,35 @@ class APIHandler(SimpleHTTPRequestHandler):
                 has_active_dispute=bool(body.get("has_active_dispute", False)),
                 opted_out=opted_out,
             )
+        elif mode == "hinglish_voice":
+            segment = CustomerSegment.PREMIUM if tier == "premium" else CustomerSegment.RETURNING
+            error_obj = RazorpayError(
+                code="BAD_REQUEST_ERROR",
+                reason=ErrorReason.INSUFFICIENT_FUNDS,
+                source=ErrorSource.CUSTOMER,
+                description="Payment failed due to insufficient funds (Voice IVR recovery trigger)",
+            )
+            event = PaymentFailedEvent(
+                event_id=event_id,
+                created_at=now,
+                payment_id=f"pay_{uuid.uuid4().hex[:12]}",
+                order_id=f"order_{uuid.uuid4().hex[:10]}",
+                amount_inr=amount,
+                currency="INR",
+                customer_id=f"cust_{uuid.uuid4().hex[:8]}",
+                customer_email=customer_email,
+                customer_phone=customer_phone,
+                customer_segment=segment,
+                error=error_obj,
+                previous_attempts=attempt_number - 1,
+                opted_out=opted_out,
+            )
         else:
             self._send_json({"error": f"Invalid mode: {mode}"}, status=400)
             return
 
-        # Invoke graph
-        initial_state: RecoveryState = {
+        # Invoke multi-agent graph
+        initial_state: MultiAgentState = {
             "event": event,
             "detection": {},
             "risk_assessment": RiskAssessment(),
@@ -348,6 +380,11 @@ class APIHandler(SimpleHTTPRequestHandler):
             "failure_mode": "",
             "config": config_data,
             "audit": audit_trail,
+            "supervisor_decision": SupervisorDecision(),
+            "compliance_verdict": ComplianceVerdict(),
+            "agent_messages": [],
+            "reflection_count": 0,
+            "max_reflections": 2,
         }
 
         try:
@@ -355,6 +392,9 @@ class APIHandler(SimpleHTTPRequestHandler):
             attempt = final_state.get("attempt", RecoveryAttempt())
             risk = final_state.get("risk_assessment", RiskAssessment())
             detection = final_state.get("detection", {})
+            supervisor = final_state.get("supervisor_decision", SupervisorDecision())
+            compliance = final_state.get("compliance_verdict", ComplianceVerdict())
+            agent_msgs = final_state.get("agent_messages", [])
 
             # Payment methods pool - Razorpay only
             import random
@@ -386,19 +426,43 @@ class APIHandler(SimpleHTTPRequestHandler):
                     "estimated_recovery_probability": risk.estimated_recovery_probability,
                     "llm_used": risk.llm_used,
                 },
+                "multi_agent": {
+                    "supervisor": {
+                        "selected_agent": supervisor.selected_agent,
+                        "reasoning": supervisor.reasoning,
+                        "confidence": supervisor.confidence,
+                        "llm_used": supervisor.llm_used,
+                        "allow_reflection": supervisor.allow_reflection,
+                    },
+                    "compliance": {
+                        "approved": compliance.approved,
+                        "violations": compliance.violations,
+                        "action_modified": compliance.action_modified,
+                        "escalated": compliance.escalated,
+                    },
+                    "agent_messages_count": len(agent_msgs),
+                    "reflection_count": final_state.get("reflection_count", 0),
+                },
                 "routing": {
-                    "target_agent": final_state.get("failure_mode", "").replace("_failure", "_agent").replace("_abandonment", "_agent"),
+                    "target_agent": supervisor.selected_agent or final_state.get("failure_mode", "").replace("_failure", "_agent").replace("_abandonment", "_agent"),
                 },
                 "execution": {
-                    "action_taken": attempt.action_taken,
-                    "channel": attempt.channel,
+                    "action_taken": "hinglish_voice_call" if mode == "hinglish_voice" else attempt.action_taken,
+                    "channel": "voice_ivr" if mode == "hinglish_voice" else attempt.channel,
                     "result": attempt.result,
                     "amount_recovered_inr": attempt.amount_recovered_inr,
                     "agent_reasoning": attempt.agent_reasoning,
                     "stopping_rule_triggered": attempt.stopping_rule_triggered,
                     "compliance_flags": getattr(attempt, "compliance_flags", []),
+                    "hinglish_voice_script": llm_compose_recovery_message(
+                        event_type="payment_failure" if mode in ("payment_failure", "hinglish_voice") else mode,
+                        customer_name=customer_name,
+                        amount=amount,
+                        failure_reason=body.get("failure_reason", "insufficient_funds"),
+                        channel="voice" if mode == "hinglish_voice" else "sms",
+                    ),
                 },
-                "payment_link_simulated": f"https://rzp.io/i/plink_{uuid.uuid4().hex[:12]}" if "link" in attempt.action_taken or "nudge" in attempt.action_taken or "email" in attempt.action_taken or "retry" in attempt.action_taken else None,
+                "payment_link_simulated": f"https://rzp.io/i/plink_{uuid.uuid4().hex[:12]}" if "link" in attempt.action_taken or "nudge" in attempt.action_taken or "email" in attempt.action_taken or "retry" in attempt.action_taken or mode == "hinglish_voice" else None,
             }
 
             self._send_json(response_payload)

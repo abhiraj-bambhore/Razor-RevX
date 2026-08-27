@@ -96,6 +96,7 @@ Examples:
     console.print()
     console.print(Panel.fit(
         "[bold cyan]RAZORPAY AI REVENUE RECOVERY AGENT[/bold cyan]\n"
+        "[dim]Multi-Agent Hierarchical Architecture | Supervisor + Specialists + Compliance Gate[/dim]\n"
         f"[dim]Batch: {args.batch_size} events | Mode: {args.mode} | Config: {args.config}[/dim]",
         border_style="cyan",
     ))
@@ -104,9 +105,11 @@ Examples:
     # ── Check Gemini ─────────────────────────────────────────────────────
     gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
     if gemini_key:
-        console.print("[green]>> Gemini API key detected -- LLM reasoning enabled[/green]")
+        console.print("[green]>> Tier 1: Gemini LLM active (contextual AI reasoning)[/green]")
     else:
-        console.print("[yellow]>> No GEMINI_API_KEY -- using deterministic fallback (fully functional)[/yellow]")
+        console.print("[yellow]>> Tier 1 offline: No GEMINI_API_KEY[/yellow]")
+        console.print("[green]>> Tier 2: ML model active (GradientBoosting + RandomForest)[/green]")
+        console.print("[dim]>> Tier 3: Heuristic rules on standby (absolute last resort)[/dim]")
     console.print()
 
     # ── Generate events ──────────────────────────────────────────────────
@@ -134,7 +137,8 @@ Examples:
     # ── Run recovery ─────────────────────────────────────────────────────
     from src.agents.orchestrator import run_recovery_batch
 
-    console.print("[bold cyan]>> Starting recovery workflow...[/bold cyan]")
+    console.print("[bold cyan]>> Starting multi-agent recovery workflow...[/bold cyan]")
+    console.print("[dim]   Supervisor → Detect → Score Risk → Specialist → Review → Compliance → Execute[/dim]")
     console.print()
 
     results, audit = run_recovery_batch(

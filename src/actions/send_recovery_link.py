@@ -49,14 +49,14 @@ def send_recovery_link(
         result = "success"
         amount_recovered = amount_inr
         logger.info(
-            "✅ Recovery link CONVERTED: %s via %s | ₹%.2f | link=%s",
+            "[CONVERTED] Recovery link CONVERTED: %s via %s | ₹%.2f | link=%s",
             event_id, channel, amount_inr, simulated_link,
         )
     else:
         result = "pending"
         amount_recovered = 0.0
         logger.info(
-            "📤 Recovery link SENT: %s via %s | ₹%.2f | link=%s (awaiting conversion)",
+            "[SENT] Recovery link SENT: %s via %s | ₹%.2f | link=%s (awaiting conversion)",
             event_id, channel, amount_inr, simulated_link,
         )
 

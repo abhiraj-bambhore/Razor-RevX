@@ -1,6 +1,18 @@
 # Razor-RevX: Autonomous AI Revenue Recovery Platform
 
-An enterprise-grade, stateful multi-agent system natively designed for the Razorpay ecosystem. It detects revenue at risk in real-time across 4 financial failure streams, diagnoses root causes, executes risk-aware recovery actions within compliance guardrails, and maintains an immutable audit trail of money recovered.
+An enterprise-grade, stateful **hierarchical multi-agent system** natively designed for the Razorpay ecosystem. It detects revenue at risk in real-time across 4 financial failure streams, diagnoses root causes, executes risk-aware recovery actions within compliance guardrails, and maintains an immutable audit trail of money recovered.
+
+---
+
+## Key Architectural Highlights
+
+* **Hierarchical Multi-Agent System:** Stateful Supervisor Agent routes incoming events dynamically to specialist agents (Payment Recovery Agent, Checkout Abandonment Agent, Subscription Mandate Agent, Receivables Chaser Agent), backed by a Reflection Loop for plan validation and an independent Compliance Gate Agent.
+* **3-Tier Fallback Resilience Engine:**
+  - **Tier 1:** Gemini 2.0 Flash LLM (contextual, qualitative AI risk scoring and hyper-personalized message generation).
+  - **Tier 2:** Trained **GradientBoostingRegressor + RandomForestClassifier ML Model** (`scikit-learn`) using 18-dimensional feature vectors for risk scoring (0-100) and action classification when LLM API is unavailable or rate-limited.
+  - **Tier 3:** Deterministic Heuristic Engine ensuring 0-downtime emergency fallback under all network conditions.
+* **Hinglish & Voice IVR Call Interventions:** Automated Hinglish (Hindi-English mix) recovery messages and simulated IVR Voice Call channels with browser text-to-speech (`SpeechSynthesisUtterance`), strictly policy-scoped to High and Critical risk tier failures (`risk_score >= 65`).
+* **Compliance Gate Agent & Stopping Rules:** Autonomous safety guardrails enforcing stopping rules (max 3 attempts per case, customer opt-out verification, DNC enforcement), financial escalation thresholds (amount ≥ ₹50,000 or risk score ≥ 85), and active B2B dispute holds.
 
 ---
 
@@ -16,7 +28,7 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ### 3. Multi-Agent Execution Pipeline
 ![Agent Execution Pipeline](web/assets/docs/execution_pipeline.png)
-*Step-by-step diagnostic breakdown showing root cause detection, LLM risk scoring (0-100), supervisor agent routing, and action execution.*
+*Step-by-step diagnostic breakdown showing root cause detection, LLM/ML risk scoring (0-100), supervisor agent routing, and action execution.*
 
 ### 4. Razorpay Payment Recovery Portal Modal
 ![Razorpay Payment Portal Modal](web/assets/docs/payment_portal_modal.png)
@@ -24,64 +36,85 @@ An enterprise-grade, stateful multi-agent system natively designed for the Razor
 
 ### 5. Immutable Compliance Audit Ledger
 ![Audit Ledger](web/assets/docs/audit_ledger.png)
-*Complete audit trail logging every decision, agent reasoning, risk score, and payment link generated into an append-only SQLite database.*
+*Complete audit trail logging every decision, agent reasoning, risk score, model used, and payment link generated into an append-only SQLite database.*
 
 ---
 
 ## System Architecture
 
-### 1. High-Level Pipeline Overview
-
-Razor-RevX operates as a simple, high-performance 4-stage pipeline:
+### 1. High-Level Multi-Agent Architecture Overview
 
 ```mermaid
-flowchart LR
-    A["1. Event Ingestion\n(Webhooks & Signals)"] --> B["2. Risk & AI Scorer\n(Gemini LLM & Rules)"]
-    B --> C["3. Specialist Agents\n(Recovery Workflows)"]
-    C --> D["4. Action & Audit\n(Payment Links & Ledger)"]
-```
+flowchart TD
+    subgraph E["Event Ingestion"]
+        EV["Razorpay Event\n(Payment / Checkout / Sub / Receivables)"]
+    end
 
-1. **Event Ingestion:** Listens to payment failures, checkout drop-offs, mandate declines, and overdue invoices in real-time.
-2. **Risk & AI Scorer:** Evaluates transaction risk score (0-100) using LLM reasoning and deterministic guardrails.
-3. **Specialist Agents:** Routes cases to dedicated recovery agents (Payment, Checkout, Subscription, or B2B Receivables).
-4. **Action & Audit:** Executes automated payment link nudges or mandate retries, and logs every action into an append-only audit ledger.
+    subgraph M["Multi-Agent Pipeline"]
+        DET["1. Detect & Classify"]
+        SCORE["2. Risk Scorer\n(Tier 1 LLM / Tier 2 ML / Tier 3 Rules)"]
+        SUP["3. Supervisor Agent\n(Dynamic Routing & Review)"]
+        
+        subgraph SPEC["Specialist Recovery Agents"]
+            PA["Payment Agent"]
+            CA["Checkout Agent"]
+            SA["Subscription Agent"]
+            RA["Receivables Agent"]
+        end
+
+        REF["4. Reflection Loop\n(Re-evaluate if needed)"]
+        CG["5. Compliance Gate Agent\n(Enforce rules & escalation)"]
+    end
+
+    subgraph A["Actions & Audit"]
+        EXEC["Execute Action\n(Payment Link / Retry / Nudge / Voice / Human)"]
+        AUDIT["Immutable Audit Ledger\n(SQLite 3 + JSONL)"]
+    end
+
+    EV --> DET --> SCORE --> SUP
+    SUP --> PA & CA & SA & RA
+    PA & CA & SA & RA --> REF
+    REF -- "Approved" --> CG
+    REF -- "Re-route" --> SUP
+    CG --> EXEC --> AUDIT
+```
 
 ---
 
-### 2. Deep-Dive Technical Architecture
-
-Below is the detailed end-to-end component flow mapping webhook ingestion, root-cause classification, risk policy scoring, multi-agent orchestration, and audit logging:
+### 2. Deep-Dive Component Flow & 3-Tier Fallback
 
 ```mermaid
 flowchart LR
-    subgraph S1["1. Event Ingestion"]
-        E1["Razorpay Webhooks\n• payment.failed\n• checkout.ondismiss\n• subscription.halted\n• invoice.overdue"]
+    subgraph S1["1. Webhook Ingestion"]
+        E1["Razorpay Events\n• payment.failed\n• checkout.ondismiss\n• subscription.halted\n• invoice.overdue"]
     end
 
-    subgraph S2["2. Detection & Risk Engine"]
-        D1["Root Cause Classifier"]
-        D2["Gemini LLM Risk Scorer\n(0-100 Risk & Tiering)"]
-        D3["Deterministic Fallback\n(0-Downtime Engine)"]
-        D1 --> D2 & D3
+    subgraph S2["2. 3-Tier Intelligence Engine"]
+        T1["Tier 1: Gemini 2.0 LLM"]
+        T2["Tier 2: GradientBoosting ML Model"]
+        T3["Tier 3: Static Heuristics"]
+        T1 -- "API Fail" --> T2 -- "Model Fail" --> T3
     end
 
-    subgraph S3["3. Agent Orchestrator"]
-        R1["Multi-Agent Router"]
-        R1 --> A1["Payment Agent"]
-        R1 --> A2["Checkout Agent"]
-        R1 --> A3["Subscription Agent"]
-        R1 --> A4["Receivables Chaser"]
-        R1 --> A5["Human Escalation Desk"]
+    subgraph S3["3. Multi-Agent Coordinator"]
+        SUP["Supervisor Agent"]
+        SUP --> A1["Payment Agent"]
+        SUP --> A2["Checkout Agent"]
+        SUP --> A3["Subscription Agent"]
+        SUP --> A4["Receivables Chaser"]
+        A1 & A2 & A3 & A4 --> REF["Reflection Loop"]
+        REF --> COMP["Compliance Gate Agent"]
     end
 
     subgraph S4["4. Actions & Audit"]
         X1["Razorpay Payment Links"]
         X2["eNACH / UPI Auto-Retries"]
-        X3["Immutable SQLite Log & JSONL"]
+        X3["Hinglish & Voice Interventions"]
+        X4["Append-Only Audit Ledger"]
     end
 
     S1 --> S2 --> S3
-    A1 & A2 & A3 & A4 & A5 --> X1 & X2 --> X3
+    COMP --> X1 & X2 & X3 --> X4
 ```
 
 ---
@@ -90,38 +123,13 @@ flowchart LR
 
 | Layer | Technology | Purpose & Implementation |
 |---|---|---|
-| **AI & Intelligence** | **Gemini 2.0 Flash** (`google-genai`) | Contextual risk scoring (0-100), LTV evaluation & personalized WhatsApp/Email nudge composition. |
-| **Fallback Engine** | **Deterministic Heuristic Engine** | 0-downtime rule-based policy engine for 100% SLA resilience during network or API limits. |
-| **Core AI Service** | **Python 3.10+ & Pydantic v2** | High-performance multi-agent orchestration, event routing, and type-safe schema validation. |
+| **AI & Intelligence** | **Gemini 2.0 Flash** (`google-genai`) | Contextual risk scoring (0-100), LTV evaluation & personalized WhatsApp/Email/Voice nudge composition. |
+| **ML Fallback Model** | **GradientBoosting & RandomForest** (`scikit-learn`) | Feature-engineered ML regressor & classifier providing 0-downtime intelligent fallback when LLM API is unavailable. |
+| **Multi-Agent Engine** | **LangGraph 0.2+ & Pydantic v2** | Hierarchical multi-agent state graph with Supervisor routing, Specialist execution, Reflection loops, and Compliance Gate validation. |
 | **Frontend UI** | **HTML5 & Vanilla JavaScript (ES6)** | Zero-framework, high-performance real-time interactive telemetry dashboard. |
 | **Styling & Design** | **Tailwind CSS & Google Fonts** | Custom Razorpay Royal Blue design system with **Plus Jakarta Sans** & **Inter** typography. |
 | **Audit Ledger** | **SQLite 3 & JSONL** | Append-only immutable compliance database (`recovery_audit.db` & `recovery_audit.jsonl`). |
-| **Testing Suite** | **Pytest 8+** | Automated unit, integration, and edge-case test suite (`run_tests.py`). |
-
-> **Production Integration Architecture:** While core banking gateways traditionally run on Java, **Razor-RevX is built in Python 3.10+** — the industry standard for LLM multi-agent systems. It integrates with enterprise payment gateways via standardized REST/gRPC webhooks (`payment.failed`, `checkout.ondismiss`), keeping card vaulting isolated while providing real-time AI recovery orchestration.
-
----
-
-## Razor-RevX Evaluation Framework
-
-### 1. Problem Taste (Picking What Actually Matters)
-* **The Financial Loss:** In Indian digital payments, 5% to 15% of transactions fail or get abandoned across UPI, Credit Cards, eNACH Mandates, and B2B Invoices. For Razorpay merchants processing billions, lost revenue represents thousands of crores annually.
-* **The Solution:** Replacing static, spammy SMS reminders with an autonomous multi-agent intelligence layer that recovers lost revenue in real-time across 4 distinct financial streams.
-
-### 2. Build Quality (Structure, Reliability & Trust)
-* **Production-Grade Design:** Clean separation of concerns between `src/detection/`, `src/agents/`, `src/actions/`, and `src/audit/`.
-* **Automated Test Coverage:** Includes unit and integration test coverage (`pytest tests/ -v`).
-* **Human-in-the-Loop Safeguards:** Transactions >= ₹50,000, B2B invoices >= ₹200,000, or Risk Scores >= 85 automatically pause for human review before any action is taken.
-* **Immutable Audit Trail:** Append-only SQLite (`recovery_audit.db`) and JSONL log track every decision, risk score, and payment link generated.
-
-### 3. AI Judgment (Right Tool in the Right Place)
-* **LLM (Gemini 2.0 Flash):** Used for qualitative contextual risk scoring (evaluating LTV, payment drop-off context) and generating dynamic, hyper-personalized WhatsApp/Email recovery nudges.
-* **Deterministic Rules (No LLM):** Used for financial math, threshold rules, state transitions, and webhook validation to ensure 0% financial hallucination risk.
-
-### 4. Failure Recovery (Resilience & Edge Cases)
-* **Multi-Rail Mandate Fallback:** If bank eNACH auto-debit fails, the agent auto-retries via exponential backoff or converts the subscription to a UPI AutoPay / Razorpay Payment Link nudge.
-* **Idempotency & Deduplication:** Tracks prior attempt counts (`get_attempts_for_event()`) to guarantee zero duplicate customer messages or double-charging.
-* **Zero-Downtime Pipeline:** If the LLM API experiences rate limits or network dropouts, the system degrades to deterministic heuristic scoring (`llm_used = False`) without crashing the pipeline.
+| **Testing Suite** | **Pytest 8+** | Automated unit, integration, and multi-agent test suite (`pytest tests/`). |
 
 ---
 
@@ -129,10 +137,10 @@ flowchart LR
 
 | Failure Mode | Detection Signal | Root Cause Interventions | Recovery Channel |
 |---|---|---|---|
-| **Razorpay Payment Failure** | `payment.failed` webhook | • `insufficient_funds`: Delayed 24h nudge<br>• `gateway_error`: Instant retry<br>• `invalid_otp`: Instant payment link | WhatsApp / SMS Payment Link |
+| **Razorpay Payment Failure** | `payment.failed` webhook | • `insufficient_funds`: Delayed 24h nudge<br>• `gateway_error`: Instant auto-retry<br>• `invalid_otp`: Instant payment link | WhatsApp / SMS / Hinglish Voice |
 | **Checkout Abandonment** | `ondismiss` event | • High intent: Time-decayed discount link<br>• Low intent: Standard reminder | Web / WhatsApp Recovery Link |
-| **Subscription Mandate** | `charged_halted` event | • `eNACH rejection`: Mandate retry<br>• `high churn risk`: Plan downgrade offer | Automated Retry / Email |
-| **B2B Overdue Invoices** | Invoice age > SLA | • Aging 1-15d: Soft dunning nudge<br>• Aging 30d+: Promise-to-Pay (PTP) tracker | Professional Email / Human Escalation |
+| **Subscription Mandate** | `charged_halted` event | • `eNACH rejection`: Mandate retry<br>• `high churn risk`: Plan downgrade offer | Automated Retry / Email / Voice |
+| **B2B Overdue Invoices** | Invoice age > SLA | • Aging 1-30d: Soft dunning nudge<br>• Aging 30d+: Promise-to-Pay (PTP) tracker | Professional Email / Phone / Escalation |ional Email / Human Escalation |
 
 ---
 

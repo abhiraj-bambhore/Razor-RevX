@@ -89,7 +89,7 @@
         <!-- Live Telemetry Toggle Tab -->
         <div class="px-3 py-1 flex items-center">
           <button onclick="toggleLiveFeed()" id="btn-live-toggle" class="hover:text-emerald-400 font-semibold transition flex items-center space-x-1.5 text-emerald-300">
-            <span id="btn-live-toggle-text">▶ Start Live Telemetry</span>
+            <span id="btn-live-toggle-text">Start Live Telemetry</span>
           </button>
         </div>
 
@@ -270,6 +270,15 @@
                 <span class="bg-slate-200 text-slate-800 px-2.5 py-1 rounded text-[11px] font-mono font-bold">SECURITY</span>
               </button>
 
+              <!-- 8. Hinglish Voice IVR Intervention -->
+              <button onclick="triggerLiveCategory('hinglish_voice', 'Razorpay Voice IVR')" class="text-left p-3.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition text-xs flex justify-between items-center group">
+                <div>
+                  <div class="font-bold text-sm text-emerald-950 group-hover:text-emerald-700">Hinglish Voice IVR Call Intervention</div>
+                  <div class="text-emerald-700 text-xs mt-0.5">Automated Hinglish Voice Call & Link</div>
+                </div>
+                <span class="bg-emerald-200 text-emerald-900 px-2.5 py-1 rounded text-[11px] font-mono font-bold">VOICE IVR</span>
+              </button>
+
             </div>
           </div>
 
@@ -282,6 +291,7 @@
                 <label class="block text-xs font-bold text-slate-700 mb-1">Failure Mode</label>
                 <select id="input-mode" class="w-full bg-white border border-slate-300 rounded px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-royal-700 outline-none">
                   <option value="payment_failure">Payment Failure</option>
+                  <option value="hinglish_voice">Hinglish Voice IVR Call</option>
                   <option value="checkout_abandonment">Checkout Abandonment</option>
                   <option value="subscription_failure">Subscription Failure</option>
                   <option value="receivable_overdue">B2B Overdue Receivable</option>
@@ -417,6 +427,14 @@
                   
                   <div class="bg-white p-3 rounded border border-slate-200 font-mono text-xs text-slate-800" id="step4-message">
                     Hi Rahul, your payment of INR 3,499 could not be processed. Please complete payment using this link: https://rzp.io/i/plink_8f93a12
+                  </div>
+
+                  <div id="step4-hinglish-box" class="hidden bg-emerald-50 border border-emerald-300 p-3 rounded text-xs text-emerald-950">
+                    <div class="flex items-center space-x-2 font-bold mb-1 text-emerald-900">
+                      <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>Hinglish IVR Voice Call Script:</span>
+                    </div>
+                    <p class="font-medium italic text-emerald-900" id="step4-hinglish-script"></p>
                   </div>
 
                   <div id="step4-stopping-box" class="hidden bg-slate-200 border border-slate-300 p-3 rounded text-slate-900 text-xs font-bold">
@@ -588,6 +606,75 @@
     </div>
   </div>
 
+  <!-- HINGLISH VOICE IVR INTERACTION MODAL -->
+  <div id="voice-modal-overlay" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full shadow-2xl overflow-hidden text-white">
+      <!-- Voice Call Header -->
+      <div class="bg-gradient-to-r from-emerald-900 to-slate-900 p-5 text-white flex items-center justify-between border-b border-emerald-500/30">
+        <div class="flex items-center space-x-3 min-w-0 flex-1 mr-3">
+          <div class="w-10 h-10 shrink-0 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400">
+            <svg class="w-5 h-5 text-emerald-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="font-bold text-xs uppercase tracking-wider block text-emerald-300 truncate">Razorpay AI Voice IVR Call</span>
+            <span class="text-xs text-slate-300 block truncate" id="voice-modal-customer">Calling Rahul Sharma (+91 98765 43210)...</span>
+          </div>
+        </div>
+        <button onclick="closeVoiceModal()" class="shrink-0 text-slate-400 hover:text-white font-bold text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded transition">
+          CLOSE
+        </button>
+      </div>
+
+      <!-- Voice Call Active Body -->
+      <div class="p-6 space-y-5 bg-slate-950">
+        
+        <!-- Live Audio Wave Animation -->
+        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-lg p-4 text-center space-y-3">
+          <div class="flex items-center justify-center space-x-1.5 h-8">
+            <span class="w-1.5 h-6 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+            <span class="w-1.5 h-8 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+            <span class="w-1.5 h-4 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+            <span class="w-1.5 h-7 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+            <span class="w-1.5 h-5 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+            <span class="w-1.5 h-8 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.5s"></span>
+            <span class="w-1.5 h-4 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+          </div>
+          <div class="text-[11px] font-mono text-emerald-400 uppercase tracking-widest font-semibold flex items-center justify-center space-x-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>VOICE IVR AGENT SPEAKING (HINGLISH)</span>
+          </div>
+        </div>
+
+        <!-- Live Script Transcript -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">AI Voice Agent Script Transcript</div>
+          <p id="voice-modal-script" class="text-xs text-emerald-200 font-medium italic leading-relaxed">
+            "Namaste Rahul ji, aapka INR 3,499 ka payment abhi process nahi ho paya. Koi baat nahi — aap is link se payment complete kar sakte hain. Dhanyavaad."
+          </p>
+        </div>
+
+        <!-- Call Actions -->
+        <div class="pt-2 grid grid-cols-2 gap-3">
+          <button onclick="speakVoiceScript()" id="btn-speak-voice" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded text-xs transition flex items-center justify-center space-x-2">
+            <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            </svg>
+            <span>Speak Aloud</span>
+          </button>
+          <button onclick="executeVoiceModalPayment()" class="bg-royal-600 hover:bg-royal-500 text-white font-bold py-2.5 px-3 rounded text-xs transition flex items-center justify-center space-x-2">
+            <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span>Press 1 (Pay Now)</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentTrace = null;
     let allAuditEntries = [];
@@ -734,12 +821,12 @@
       if (liveFeedInterval) {
         clearInterval(liveFeedInterval);
         liveFeedInterval = null;
-        textLabel.innerText = '▶ Start Live Telemetry';
+        textLabel.innerText = 'Start Live Telemetry';
         btn.className = 'hover:text-emerald-400 font-semibold transition flex items-center space-x-1.5 text-emerald-300';
         pulse.className = 'inline-block w-2 h-2 rounded-full bg-slate-400';
         statusText.innerText = 'Stream Standby (Paused)';
       } else {
-        textLabel.innerText = '⏸ Pause Live Telemetry';
+        textLabel.innerText = 'Pause Live Telemetry';
         btn.className = 'hover:text-amber-300 font-semibold transition flex items-center space-x-1.5 text-amber-400';
         pulse.className = 'inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
         statusText.innerText = 'Stream Active (1 event / 3s)';
@@ -924,6 +1011,13 @@
         badge.className = 'px-2.5 py-0.5 rounded font-mono text-xs text-white font-bold bg-slate-600';
       }
 
+      if (t.execution.hinglish_voice_script) {
+        document.getElementById('step4-hinglish-box').classList.remove('hidden');
+        document.getElementById('step4-hinglish-script').innerText = `"${t.execution.hinglish_voice_script}"`;
+      } else {
+        document.getElementById('step4-hinglish-box').classList.add('hidden');
+      }
+
       if (t.execution.stopping_rule_triggered) {
         document.getElementById('step4-stopping-box').classList.remove('hidden');
         document.getElementById('step4-stopping-rule').innerText = t.execution.stopping_rule_triggered;
@@ -937,6 +1031,50 @@
       } else {
         document.getElementById('step5-conversion-box').classList.add('hidden');
       }
+
+      // Auto-open Voice IVR Call Modal ONLY for High/Critical Risk Fails (score >= 65) or explicit Hinglish Voice Mode
+      const isHighOrCritical = t.risk_assessment && (t.risk_assessment.risk_score >= 65 || t.risk_assessment.risk_tier === 'high' || t.risk_assessment.risk_tier === 'critical');
+      const isVoiceChannel = t.execution && (t.execution.channel === 'voice' || t.execution.channel === 'voice_ivr');
+
+      if (t.mode === 'hinglish_voice' || (isHighOrCritical && isVoiceChannel)) {
+        setTimeout(openVoiceModal, 300);
+      }
+    }
+
+    function openVoiceModal() {
+      if (!currentTrace) return;
+      document.getElementById('voice-modal-customer').innerText = `Calling ${currentTrace.customer_name} (+91 98765 43210)...`;
+      const scriptText = (currentTrace.execution && currentTrace.execution.hinglish_voice_script) 
+        ? currentTrace.execution.hinglish_voice_script 
+        : `Namaste ${currentTrace.customer_name} ji, aapka INR ${currentTrace.amount_inr} ka payment process nahi ho paya. Link se complete kar lijiye.`;
+      document.getElementById('voice-modal-script').innerText = `"${scriptText}"`;
+      document.getElementById('voice-modal-overlay').classList.remove('hidden');
+
+      speakVoiceScript();
+    }
+
+    function closeVoiceModal() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      document.getElementById('voice-modal-overlay').classList.add('hidden');
+    }
+
+    function speakVoiceScript() {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+
+      const text = document.getElementById('voice-modal-script').innerText.replace(/^"|"$/g, '');
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.lang = 'hi-IN';
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function executeVoiceModalPayment() {
+      closeVoiceModal();
+      await simulateCustomerPay();
     }
 
     function openCheckoutModal() {

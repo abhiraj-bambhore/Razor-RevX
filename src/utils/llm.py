@@ -1,7 +1,11 @@
 """
-Gemini LLM client wrapper.
-Uses the new google-genai SDK (google.genai).
-Falls back to deterministic logic when no API key is available or key is invalid.
+Gemini LLM client wrapper with 3-tier resilience.
+
+Tier 1: Gemini 2.0 Flash (contextual, nuanced AI scoring)
+Tier 2: ML model (GradientBoosting + RandomForest)
+Tier 3: Static heuristic rules (absolute last resort)
+
+Falls back gracefully when API key is missing, rate-limited, or network fails.
 """
 from __future__ import annotations
 
@@ -44,7 +48,7 @@ def _get_gemini_client():
         logger.debug("Gemini client initialized via legacy google-generativeai SDK")
         return ("legacy", model)
     except Exception as exc:
-        logger.warning("Failed to init Gemini (both SDKs): %s. Using deterministic fallback.", exc)
+        logger.warning("Failed to init Gemini (both SDKs): %s. Using ML/deterministic fallback.", exc)
         return None
 
 
@@ -87,7 +91,10 @@ def _call_gemini(prompt: str) -> str:
 
 def llm_risk_assessment(event_summary: str) -> dict:
     """
-    Ask Gemini to assess risk and recommend intervention.
+    3-tier risk assessment:
+        Tier 1: Ask Gemini LLM
+        Tier 2: ML model (GradientBoosting)
+        Tier 3: Deterministic heuristic (last resort)
 
     Returns:
         {
@@ -96,11 +103,28 @@ def llm_risk_assessment(event_summary: str) -> dict:
             "recommended_action": str, # What to do
             "estimated_recovery_probability": float,  # 0-1
             "llm_used": bool,
+            "model_used": str,         # "gemini_llm" | "ml_gradient_boosting" | "heuristic"
         }
     """
-    if get_client() is None:
-        return _deterministic_fallback(event_summary)
+    # ── Tier 1: Gemini LLM ───────────────────────────────────────────────
+    if get_client() is not None:
+        try:
+            return _gemini_risk_assessment(event_summary)
+        except Exception as exc:
+            logger.warning("Tier 1 (Gemini) failed: %s. Falling back to ML model.", exc)
 
+    # ── Tier 2: ML Model ─────────────────────────────────────────────────
+    ml_result = _ml_risk_assessment(event_summary)
+    if ml_result is not None:
+        return ml_result
+
+    # ── Tier 3: Heuristic (last resort) ──────────────────────────────────
+    logger.warning("Tier 2 (ML) unavailable. Using Tier 3 heuristic fallback.")
+    return _deterministic_fallback(event_summary)
+
+
+def _gemini_risk_assessment(event_summary: str) -> dict:
+    """Tier 1: Gemini LLM risk assessment."""
     prompt = f"""You are a payment recovery specialist AI for Razorpay. Analyze this revenue-at-risk event and respond with a JSON object.
 
 EVENT:
@@ -122,22 +146,137 @@ Rules:
 - Premium/Enterprise customers should have higher urgency
 """
 
+    text = _call_gemini(prompt)
+
+    # Strip markdown code fences if present
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1]
+        if "```" in text:
+            text = text[:text.rfind("```")]
+        text = text.strip()
+
+    result = json.loads(text)
+    result["llm_used"] = True
+    result["model_used"] = "gemini_llm"
+    return result
+
+
+def _ml_risk_assessment(event_summary: str) -> dict | None:
+    """
+    Tier 2: ML model risk assessment using GradientBoosting.
+
+    Note: This requires the event object for feature extraction.
+    When called from llm_risk_assessment (text summary only),
+    we parse what we can from the summary text.
+    Falls back to None if ML model unavailable.
+    """
     try:
-        text = _call_gemini(prompt)
+        from src.ml.risk_model import get_risk_model
+        model = get_risk_model()
+        if not model.is_fitted:
+            return None
 
-        # Strip markdown code fences if present
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1]
-            if "```" in text:
-                text = text[:text.rfind("```")]
-            text = text.strip()
-
-        result = json.loads(text)
-        result["llm_used"] = True
+        # Parse basic features from the text summary for standalone calls
+        result = _ml_predict_from_summary(model, event_summary)
         return result
     except Exception as exc:
-        logger.warning("Gemini call failed: %s. Using fallback.", exc)
-        return _deterministic_fallback(event_summary)
+        logger.warning("Tier 2 (ML) failed: %s", exc)
+        return None
+
+
+def _ml_predict_from_summary(model, event_summary: str) -> dict:
+    """
+    Extract features from text summary and predict using ML model.
+    Used when only the text summary is available (not the event object).
+    """
+    import numpy as np
+    summary_lower = event_summary.lower()
+
+    # Build a pseudo feature vector from text parsing
+    features = [0.0] * 18
+
+    # Parse amount
+    import re
+    amount_match = re.search(r"₹([\d,]+\.?\d*)", event_summary)
+    if amount_match:
+        amt = float(amount_match.group(1).replace(",", ""))
+        features[0] = np.log1p(amt)
+        features[9] = 1.0 if amt >= 50000 else 0.0
+
+    # Segment
+    if "enterprise" in summary_lower:
+        features[1] = 4.0
+        features[10] = 1.0
+    elif "premium" in summary_lower:
+        features[1] = 3.0
+        features[10] = 1.0
+    elif "vip" in summary_lower:
+        features[1] = 2.0
+    elif "returning" in summary_lower:
+        features[1] = 1.0
+
+    # Error reason
+    reason_map = {
+        "insufficient_funds": (0, False, False),
+        "invalid_otp": (1, False, False),
+        "gateway_error": (2, True, False),
+        "card_declined": (3, False, False),
+        "payment_cancelled": (4, False, False),
+        "network_error": (5, True, False),
+        "timeout": (6, True, False),
+        "fraud_flagged": (7, False, True),
+    }
+    for reason_text, (idx, transient, fraud) in reason_map.items():
+        if reason_text in summary_lower:
+            features[4] = float(idx)
+            features[7] = 1.0 if transient else 0.0
+            features[8] = 1.0 if fraud else 0.0
+            break
+
+    # Event type
+    if "checkout" in summary_lower:
+        features[16] = 1.0
+    elif "subscription" in summary_lower:
+        features[16] = 2.0
+    elif "receivable" in summary_lower or "overdue" in summary_lower:
+        features[16] = 3.0
+
+    # Days overdue
+    days_match = re.search(r"(\d+)\s*days?\s*overdue", summary_lower)
+    if days_match:
+        features[11] = float(days_match.group(1))
+
+    # Use model's internal prediction
+    X = np.array([features], dtype=np.float64)
+    X_scaled = model.scaler.transform(X)
+
+    risk_score = float(np.clip(model.risk_regressor.predict(X_scaled)[0], 0, 100))
+    action_idx = int(model.action_classifier.predict(X_scaled)[0])
+
+    from src.ml.risk_model import IDX_TO_ACTION
+    action = IDX_TO_ACTION.get(action_idx, "send_recovery_link")
+
+    # Recovery probability
+    if risk_score >= 85:
+        recovery_prob = 0.15
+    elif risk_score >= 65:
+        recovery_prob = 0.45
+    elif risk_score >= 40:
+        recovery_prob = 0.65
+    else:
+        recovery_prob = 0.80
+
+    return {
+        "risk_score": round(risk_score, 1),
+        "reasoning": (
+            f"Machine learning model evaluation (Gradient Boosting Regressor). "
+            f"Evaluated risk score at {risk_score:.1f} and recommended {action}."
+        ),
+        "recommended_action": action,
+        "estimated_recovery_probability": round(recovery_prob, 3),
+        "llm_used": False,
+        "model_used": "ml_gradient_boosting",
+    }
 
 
 def llm_compose_recovery_message(
@@ -150,9 +289,13 @@ def llm_compose_recovery_message(
     """
     Compose a personalized recovery message using Gemini.
     Falls back to templates if LLM unavailable.
+    Supports Hinglish for specific failure reasons and voice channel.
     """
     if get_client() is None:
         return _template_message(event_type, customer_name, amount, failure_reason, channel)
+
+    # Determine if Hinglish should be used
+    use_hinglish = failure_reason in ("insufficient_funds", "invalid_otp") or channel == "voice"
 
     prompt = f"""Compose a brief, professional {channel.upper()} message for recovering a payment.
 
@@ -167,7 +310,8 @@ Rules:
 - If SMS, keep under 160 characters
 - Do NOT use the words "failed" or "failure" -- say "couldn't be processed" or "needs attention"
 - End with a clear call to action
-- Use Hinglish if failure_reason is insufficient_funds or invalid_otp (mix Hindi + English naturally)
+{"- Use Hinglish (mix Hindi + English naturally, e.g., 'Aapka payment process nahi ho paya')" if use_hinglish else ""}
+{"- This is for a VOICE IVR call — make it conversational and warm, include pauses" if channel == "voice" else ""}
 
 Respond with ONLY the message text, nothing else.
 """
@@ -179,10 +323,9 @@ Respond with ONLY the message text, nothing else.
 
 
 def _deterministic_fallback(event_summary: str) -> dict:
-    """Rule-based fallback when LLM is unavailable."""
+    """Tier 3: Rule-based fallback — absolute last resort when both LLM and ML are unavailable."""
     summary_lower = event_summary.lower()
 
-    # Parse amount if present
     risk_score = 50.0
     recovery_prob = 0.5
     action = "send_recovery_link"
@@ -222,7 +365,6 @@ def _deterministic_fallback(event_summary: str) -> dict:
 
     # Boost for high amounts
     if "₹" in event_summary:
-        # Try to extract amount
         try:
             import re
             match = re.search(r"₹([\d,]+\.?\d*)", event_summary)
@@ -242,10 +384,11 @@ def _deterministic_fallback(event_summary: str) -> dict:
 
     return {
         "risk_score": round(risk_score, 1),
-        "reasoning": f"Deterministic assessment based on failure pattern. Key factors detected in event.",
+        "reasoning": f"Tier 3 heuristic assessment (LLM and ML unavailable). Pattern-matched from event text.",
         "recommended_action": action,
         "estimated_recovery_probability": round(recovery_prob, 3),
         "llm_used": False,
+        "model_used": "heuristic",
     }
 
 
@@ -256,41 +399,70 @@ def _template_message(
     failure_reason: str,
     channel: str,
 ) -> str:
-    """Template-based message when LLM is unavailable."""
+    """Template-based message when LLM is unavailable. Includes Hinglish + voice templates."""
     name = customer_name.split()[0] if customer_name else "there"
+
+    # Determine if Hinglish should be used
+    use_hinglish = failure_reason in ("insufficient_funds", "invalid_otp") or channel == "voice"
 
     templates = {
         "payment_failure": {
             "sms": f"Hi {name}, your payment of INR {amount:,.0f} needs attention. Retry here: {{link}} - Payments Team",
             "email": f"Hi {name},\n\nYour recent payment of INR {amount:,.2f} couldn't be processed. Please retry using the link below.\n\nRetry: {{link}}\n\nRegards,\nPayments Team",
             "whatsapp": f"Hi {name}, your payment of INR {amount:,.0f} could not be processed. Please complete payment using this link: {{link}}",
+            "voice": f"Namaste {name} ji, aapka INR {amount:,.0f} ka payment abhi process nahi ho paya. Koi baat nahi — aap is link se payment complete kar sakte hain. Dhanyavaad.",
         },
         "checkout_abandonment": {
             "sms": f"Hi {name}, you left items in your cart (INR {amount:,.0f}). Complete checkout: {{link}}",
             "email": f"Hi {name},\n\nLooks like you left some items in your cart worth INR {amount:,.2f}. Your cart is saved -- complete your purchase here.\n\nCheckout: {{link}}",
             "whatsapp": f"Hi {name}, your cart is saved with items worth INR {amount:,.0f}. Complete purchase here: {{link}}",
+            "voice": f"Hello {name} ji, aapke cart mein INR {amount:,.0f} ke items saved hain. Aap abhi checkout complete kar sakte hain. Link aapko SMS pe bhej diya gaya hai.",
         },
         "subscription_failure": {
             "sms": f"Hi {name}, your subscription renewal of INR {amount:,.0f} needs attention. Update: {{link}}",
             "email": f"Hi {name},\n\nYour subscription renewal of INR {amount:,.2f} couldn't be processed. To avoid service interruption, please update your payment method.\n\nUpdate: {{link}}",
             "whatsapp": f"Hi {name}, your subscription renewal of INR {amount:,.0f} needs attention. Update payment method here: {{link}}",
+            "voice": f"Namaste {name} ji, aapki subscription ka renewal INR {amount:,.0f} ka process nahi ho paya. Service bani rahe isliye payment update kar dijiye. Link aapke phone pe bhej diya hai.",
         },
         "receivable_overdue": {
             "sms": f"Reminder: Invoice of INR {amount:,.0f} is pending. Pay now: {{link}} - Accounts Team",
             "email": f"Dear {name},\n\nThis is a friendly reminder that invoice amount INR {amount:,.2f} is overdue. Please arrange payment at your earliest convenience.\n\nPay: {{link}}\n\nRegards,\nAccounts Receivable",
             "whatsapp": f"Hi {name}, invoice of INR {amount:,.0f} is pending. Please complete payment using this link: {{link}}",
+            "voice": f"Namaste {name} ji, aapka INR {amount:,.0f} ka invoice abhi pending hai. Kripya jaldi se jaldi payment kar dijiye. Link SMS pe bhej diya gaya hai. Dhanyavaad.",
         },
     }
 
-    mode_key = event_type.replace(".", "_").replace("charged_halted", "failure")
-    # Normalize to our template keys
-    for key in templates:
-        if key in mode_key or mode_key in key:
-            mode_key = key
-            break
+    # Hinglish override for payment failures with specific reasons
+    if use_hinglish and channel in ("sms", "whatsapp"):
+        hinglish_templates = {
+            "payment_failure": {
+                "sms": f"Hi {name}, aapka INR {amount:,.0f} ka payment process nahi hua. Yahan se retry karein: {{link}}",
+                "whatsapp": f"Hi {name} ji, aapka INR {amount:,.0f} ka payment abhi process nahi ho paya. Koi baat nahi, is link se complete kar lijiye: {{link}}",
+            },
+            "checkout_abandonment": {
+                "sms": f"Hi {name}, aapke cart mein INR {amount:,.0f} ke items hain. Checkout karein: {{link}}",
+                "whatsapp": f"Hi {name} ji, aapka cart saved hai — INR {amount:,.0f}. Yahan se purchase complete karein: {{link}}",
+            },
+        }
+        mode_key = _match_template_key(event_type, hinglish_templates)
+        if mode_key and channel in hinglish_templates.get(mode_key, {}):
+            return hinglish_templates[mode_key][channel]
 
+    mode_key = _match_template_key(event_type, templates)
     channel_key = channel.lower()
-    if channel_key not in ("sms", "email", "whatsapp"):
+    if channel_key not in ("sms", "email", "whatsapp", "voice"):
         channel_key = "sms"
 
-    return templates.get(mode_key, templates["payment_failure"]).get(channel_key, f"Payment of ₹{amount:,.0f} needs attention. Link: {{link}}")
+    return templates.get(mode_key, templates["payment_failure"]).get(
+        channel_key,
+        f"Payment of ₹{amount:,.0f} needs attention. Link: {{link}}"
+    )
+
+
+def _match_template_key(event_type: str, templates: dict) -> str:
+    """Match event_type string to template dictionary key."""
+    mode_key = event_type.replace(".", "_").replace("charged_halted", "failure")
+    for key in templates:
+        if key in mode_key or mode_key in key:
+            return key
+    return "payment_failure"

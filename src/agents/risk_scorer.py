@@ -1,6 +1,11 @@
 """
-Risk scorer agent.
-Uses LLM (Gemini) or deterministic fallback to assess risk and recommend action.
+Risk scorer agent with 3-tier resilience.
+
+Tier 1: Gemini LLM (via llm_risk_assessment)
+Tier 2: ML GradientBoosting model (direct call when event object available)
+Tier 3: Static heuristic (absolute last resort)
+
+Logs which model was used for audit transparency.
 """
 from __future__ import annotations
 
@@ -75,20 +80,37 @@ def _event_to_summary(event: Any, detection_result: dict) -> str:
 
 def score_risk(event: Any, detection_result: dict) -> RiskAssessment:
     """
-    Score risk for a detected event using LLM or deterministic fallback.
+    Score risk for a detected event using 3-tier fallback.
+
+    Tier 1: Gemini LLM (via text summary)
+    Tier 2: ML model (direct feature extraction from event object)
+    Tier 3: Heuristic rules (via llm_risk_assessment fallback chain)
 
     Returns a RiskAssessment with score, reasoning, and recommended action.
     """
     summary = _event_to_summary(event, detection_result)
 
-    # Call LLM (or fallback)
+    # Attempt the 3-tier call (LLM → ML-from-text → heuristic)
     llm_result = llm_risk_assessment(summary)
+
+    # If LLM failed and we got ML/heuristic from text summary,
+    # try direct ML scoring using the event object for better accuracy
+    model_used = llm_result.get("model_used", "unknown")
+    if model_used != "gemini_llm":
+        ml_direct = _try_direct_ml_scoring(event, detection_result)
+        if ml_direct is not None:
+            llm_result = ml_direct
+            model_used = "ml_gradient_boosting"
 
     risk_score = float(llm_result.get("risk_score", 50.0))
     reasoning = llm_result.get("reasoning", "")
-    action = llm_result.get("recommended_action", detection_result.get("recommended_first_action", "send_recovery_link"))
+    action = llm_result.get(
+        "recommended_action",
+        detection_result.get("recommended_first_action", "send_recovery_link"),
+    )
     recovery_prob = float(llm_result.get("estimated_recovery_probability", 0.5))
     llm_used = llm_result.get("llm_used", False)
+    model_used = llm_result.get("model_used", "unknown")
 
     # Determine risk tier from score
     if risk_score >= 85:
@@ -120,8 +142,27 @@ def score_risk(event: Any, detection_result: dict) -> RiskAssessment:
     )
 
     logger.info(
-        "Risk scored: event=%s | score=%.1f | tier=%s | action=%s | human=%s | llm=%s",
-        event.event_id, risk_score, tier.value, action, needs_human, llm_used,
+        "Risk scored: event=%s | score=%.1f | tier=%s | action=%s | "
+        "human=%s | model=%s",
+        event.event_id, risk_score, tier.value, action, needs_human, model_used,
     )
 
     return assessment
+
+
+def _try_direct_ml_scoring(event: Any, detection: dict) -> dict | None:
+    """
+    Attempt direct ML model scoring using the event object.
+    Provides better accuracy than text-parsing since features
+    are extracted directly from structured data.
+    """
+    try:
+        from src.ml.risk_model import get_risk_model
+        model = get_risk_model()
+        if model.is_fitted:
+            result = model.predict(event, detection)
+            logger.debug("Direct ML scoring succeeded: score=%.1f", result["risk_score"])
+            return result
+    except Exception as exc:
+        logger.debug("Direct ML scoring failed: %s", exc)
+    return None

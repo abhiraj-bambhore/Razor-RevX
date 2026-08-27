@@ -44,14 +44,14 @@ def send_nudge(
         result = "success"
         amount_recovered = amount_inr
         logger.info(
-            "✅ Nudge led to CONVERSION: %s via %s | ₹%.2f",
+            "[CONVERSION] Nudge led to CONVERSION: %s via %s | ₹%.2f",
             event_id, channel, amount_inr,
         )
     else:
         result = "pending"
         amount_recovered = 0.0
         logger.info(
-            "📱 Nudge SENT: %s via %s | ₹%.2f (awaiting engagement)",
+            "[SENT] Nudge SENT: %s via %s | ₹%.2f (awaiting engagement)",
             event_id, channel, amount_inr,
         )
 

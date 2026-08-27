@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import uuid
 
 
@@ -258,3 +258,50 @@ class BatchRecoveryReport(BaseModel):
     opted_out: int = 0
 
     agent_performance: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
+
+# ── Multi-Agent communication schemas ────────────────────────────────────────
+
+class AgentMessage(BaseModel):
+    """Message passed between agents in the multi-agent pipeline."""
+    from_agent: str = ""
+    to_agent: str = ""
+    message_type: str = ""           # routing | proposal | verdict | reflection
+    content: str = ""
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SupervisorDecision(BaseModel):
+    """Decision made by the Supervisor agent for routing."""
+    decision_id: str = Field(default_factory=lambda: f"dec_{uuid.uuid4().hex[:12]}")
+    selected_agent: str = ""         # payment | checkout | subscription | receivables
+    reasoning: str = ""
+    confidence: float = 0.0          # 0-1
+    requires_compliance_check: bool = True
+    allow_reflection: bool = False   # Can supervisor re-route after specialist output?
+    llm_used: bool = False
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ComplianceVerdict(BaseModel):
+    """Verdict from the Compliance Gate agent."""
+    verdict_id: str = Field(default_factory=lambda: f"cvd_{uuid.uuid4().hex[:12]}")
+    approved: bool = True
+    action_allowed: str = ""         # The original proposed action
+    action_modified: str = ""        # Modified action (if compliance changed it)
+    violations: list[str] = Field(default_factory=list)  # List of rules violated
+    reasoning: str = ""
+    escalated: bool = False
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MLModelMetrics(BaseModel):
+    """Tracks ML model performance across batches."""
+    model_config = ConfigDict(protected_namespaces=())
+    model_name: str = ""
+    risk_mae: float = 0.0
+    action_accuracy: float = 0.0
+    training_samples: int = 0
+    predictions_made: int = 0
+    top_features: list[tuple[str, float]] = Field(default_factory=list)

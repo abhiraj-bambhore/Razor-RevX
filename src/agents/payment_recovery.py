@@ -92,13 +92,15 @@ def run_payment_recovery(
         _log_audit(audit, event, risk, attempt, ["auto_retry"])
         return attempt
 
-    # ── Recovery link for customer-action errors ─────────────────────────
+    # Select channel: Voice call ONLY for high/critical risk tier (risk_score >= 65), WhatsApp for low/medium risk
+    channel = "voice" if risk.risk_score >= 65 else "whatsapp"
+
     message = llm_compose_recovery_message(
         event_type="payment_failure",
         customer_name=event.customer_email.split("@")[0],
         amount=event.amount_inr,
         failure_reason=event.error.reason.value,
-        channel="whatsapp",
+        channel=channel,
     )
 
     attempt = send_recovery_link(
@@ -107,11 +109,11 @@ def run_payment_recovery(
         customer_phone=event.customer_phone,
         amount_inr=event.amount_inr,
         order_id=event.order_id,
-        channel="whatsapp",
+        channel=channel,
         attempt_number=prior_attempts + 1,
         message=message,
     )
-    _log_audit(audit, event, risk, attempt, ["recovery_link_sent"])
+    _log_audit(audit, event, risk, attempt, [f"{channel}_recovery_sent"])
     return attempt
 
 

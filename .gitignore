@@ -16,6 +16,8 @@ htmlcov/
 # Audit DB & Runtime logs
 audit/*.db
 audit/*.sqlite
+audit/*.json
+audit/*.jsonl
 *.log
 
 # OS & IDE Files
