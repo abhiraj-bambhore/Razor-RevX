@@ -18,17 +18,21 @@ An enterprise-grade, stateful **hierarchical multi-agent system** natively desig
 
 ### Recorded Hinglish Voice IVR Call Audio Samples
 
-The platform includes pre-recorded Hinglish voice call audio samples (`web/assets/audio/`) for high-conversion Indian customer outreach. Click below to play immediately in GitHub's built-in Audio Player:
+The platform includes pre-recorded Hinglish voice call audio samples (`web/assets/audio/`) for high-conversion Indian customer outreach:
 
 #### 1. Payment Failure Voice Call Sample
 > *"Namaste Rahul ji, aapka INR 3,499 ka payment abhi process nahi ho paya. Koi baat nahi — aap is link se payment complete kar sakte hain. Dhanyavaad."*
 
-👉 **[PLAY PAYMENT FAILURE VOICE SAMPLE (GitHub Audio Player)](https://github.com/abhiraj-bambhore/Razor-RevX/blob/main/web/assets/audio/hinglish_voice_sample.mp3)**
+<div>
+  <audio controls src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_sample.mp3" style="width: 100%;"></audio>
+</div>
 
 #### 2. B2B Overdue Invoice Voice Call Sample
 > *"Namaste Murti Solutions, aapka INR 120,000 ka invoice payment overdue hai. Account team se contact karke aaj hi payment clear karein. Dhanyavaad."*
 
-👉 **[PLAY B2B INVOICE VOICE SAMPLE (GitHub Audio Player)](https://github.com/abhiraj-bambhore/Razor-RevX/blob/main/web/assets/audio/hinglish_voice_receivables_sample.mp3)**
+<div>
+  <audio controls src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_receivables_sample.mp3" style="width: 100%;"></audio>
+</div>
 
 ---
 
