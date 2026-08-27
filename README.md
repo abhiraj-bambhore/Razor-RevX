@@ -18,21 +18,17 @@ An enterprise-grade, stateful **hierarchical multi-agent system** natively desig
 
 ### Recorded Hinglish Voice IVR Call Audio Samples
 
-The platform includes pre-recorded Hinglish voice call audio samples (`web/assets/audio/`) for high-conversion Indian customer outreach. Play them directly on GitHub below:
+The platform includes pre-recorded Hinglish voice call audio samples for high-conversion Indian customer outreach:
 
-* **Payment Failure Voice Call Sample ([hinglish_voice_sample.mp3](https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_sample.mp3))**:
-  > *"Namaste Rahul ji, aapka INR 3,499 ka payment abhi process nahi ho paya. Koi baat nahi — aap is link se payment complete kar sakte hain. Dhanyavaad."*
+#### 1. Payment Failure Voice Call Sample
+> *"Namaste Rahul ji, aapka INR 3,499 ka payment abhi process nahi ho paya. Koi baat nahi — aap is link se payment complete kar sakte hain. Dhanyavaad."*
 
-  https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_sample.mp4
+<video src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_sample.mp4" controls="controls" width="100%"></video>
 
-  <video src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_sample.mp4" controls width="100%"></video>
+#### 2. B2B Overdue Invoice Voice Call Sample
+> *"Namaste Mutti Solutions, aapka INR 120,000 ka invoice payment overdue hai. Account team se contact karke aaj hi payment clear karein. Dhanyavaad."*
 
-* **B2B Overdue Invoice Voice Call Sample ([hinglish_voice_receivables_sample.mp3](https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_receivables_sample.mp3))**:
-  > *"Namaste Mutti Solutions, aapka INR 120,000 ka invoice payment overdue hai. Account team se contact karke aaj hi payment clear karein. Dhanyavaad."*
-
-  https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_receivables_sample.mp4
-
-  <video src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_receivables_sample.mp4" controls width="100%"></video>
+<video src="https://raw.githubusercontent.com/abhiraj-bambhore/Razor-RevX/main/web/assets/audio/hinglish_voice_receivables_sample.mp4" controls="controls" width="100%"></video>
 
 ---
 
