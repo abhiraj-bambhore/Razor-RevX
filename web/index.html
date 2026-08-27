@@ -1053,7 +1053,13 @@
       speakVoiceScript();
     }
 
+    let currentAudioElement = null;
+
     function closeVoiceModal() {
+      if (currentAudioElement) {
+        currentAudioElement.pause();
+        currentAudioElement = null;
+      }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -1061,15 +1067,28 @@
     }
 
     function speakVoiceScript() {
-      if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
+      if (currentAudioElement) {
+        currentAudioElement.pause();
+        currentAudioElement = null;
+      }
 
-      const text = document.getElementById('voice-modal-script').innerText.replace(/^"|"$/g, '');
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      utterance.lang = 'hi-IN';
-      window.speechSynthesis.speak(utterance);
+      const isReceivable = currentTrace && (currentTrace.mode === 'receivables' || currentTrace.mode === 'receivable_overdue');
+      const audioPath = isReceivable ? '/assets/audio/hinglish_voice_receivables_sample.mp3' : '/assets/audio/hinglish_voice_sample.mp3';
+      
+      const audio = new Audio(audioPath);
+      currentAudioElement = audio;
+
+      audio.play().catch(() => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const text = document.getElementById('voice-modal-script').innerText.replace(/^"|"$/g, '');
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.95;
+          utterance.pitch = 1.0;
+          utterance.lang = 'hi-IN';
+          window.speechSynthesis.speak(utterance);
+        }
+      });
     }
 
     async function executeVoiceModalPayment() {
