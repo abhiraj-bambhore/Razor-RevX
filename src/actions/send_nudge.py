@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import random
 import logging
+import uuid
 from datetime import datetime
 
 from src.data.schemas import RecoveryAttempt
