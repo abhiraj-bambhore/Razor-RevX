@@ -13,5 +13,5 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test
-        run: echo "CI pipeline is working!"
+      - name: Docker Setup
+        uses: docker/setup-buildx-action@v3
