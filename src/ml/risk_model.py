@@ -400,12 +400,18 @@ def get_risk_model() -> RiskMLModel:
     Loads from disk if available, otherwise trains fresh.
     """
     global _model
-    if _model is None or not _model.is_fitted:
+    if _model is None:
         _model = RiskMLModel()
         if not _model.load():
-            _model.train(n_samples=500)
+            _model.train(n_samples=2000)
             try:
                 _model.save()
             except Exception as e:
-                logger.warning("Could not persist ML model: %s", e)
+                logger.warning("Failed to save model: %s", e)
+
+    # Ensure model is fitted (safety check)
+    if not _model.is_fitted:
+        logger.warning("Singleton model not fitted. Training now...")
+        _model.train(n_samples=2000)
+
     return _model
