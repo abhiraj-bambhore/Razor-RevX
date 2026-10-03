@@ -105,6 +105,8 @@ class TestRiskMLModel:
 
     def test_singleton_risk_model(self):
         model = get_risk_model()
+        if not model.is_fitted:
+            model.train(n_samples=200)
         assert model.is_fitted is True
 
 

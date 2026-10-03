@@ -370,8 +370,9 @@ class RiskMLModel:
             self._is_fitted = True
             logger.info("ML model loaded from %s", load_dir)
             return True
-        except FileNotFoundError:
-            logger.info("No pre-trained model found at %s", load_dir)
+        except Exception as e:
+            logger.warning("Could not load pre-trained model (%s): %s. Model will be retrained.", load_dir, e)
+            self._is_fitted = False
             return False
 
     def _top_importances(self, n: int = 5) -> list[tuple[str, float]]:
@@ -399,9 +400,12 @@ def get_risk_model() -> RiskMLModel:
     Loads from disk if available, otherwise trains fresh.
     """
     global _model
-    if _model is None:
+    if _model is None or not _model.is_fitted:
         _model = RiskMLModel()
         if not _model.load():
-            _model.train(n_samples=2000)
-            _model.save()
+            _model.train(n_samples=500)
+            try:
+                _model.save()
+            except Exception as e:
+                logger.warning("Could not persist ML model: %s", e)
     return _model
