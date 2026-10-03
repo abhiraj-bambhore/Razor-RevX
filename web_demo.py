@@ -494,8 +494,9 @@ def run_server(port: int = 8000):
 
 if __name__ == "__main__":
     import argparse
+    default_port = int(os.environ.get("PORT", 8000))
     parser = argparse.ArgumentParser(description="Razorpay AI Revenue Recovery Web Demo Server")
-    parser.add_argument("--port", type=int, default=8000, help="Port to run server on (default: 8000)")
+    parser.add_argument("--port", type=int, default=default_port, help=f"Port to run server on (default: {default_port})")
     parser.add_argument("--fresh", action="store_true", help="Start with a fresh empty audit database (0 stats)")
     args = parser.parse_args()
 

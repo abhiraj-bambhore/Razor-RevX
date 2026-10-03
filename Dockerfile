@@ -26,5 +26,5 @@ COPY . .
 # Expose default port (e.g. 8000 for web demo / API if applicable)
 EXPOSE 8000
 
-# Default command (customize as needed: run_recovery.py, web_demo.py, etc.)
-CMD ["python", "run_recovery.py"]
+# Default command: runs the web demo dashboard server
+CMD ["python", "web_demo.py"]
